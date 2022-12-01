@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<package format="3">
+
+    <!-- Package Information -->
+    <name>uvio</name>
+    <version>1.0.0</version>
+    <description>
+        Implementation of a type-based error-state Kalman filter for UWB aided VIO.
+    </description>
+
+    <!-- Code Authors -->
+    <author email="alessandro.fornasier@aau.at">Alessandro Fornasier</author>
+    <maintainer email="alessandro.fornasier@aau.at">Alessandro Fornasier</maintainer>
+
+    <!-- Licensing -->
+    <license>GNU General Public License v3.0</license>
+
+    <!-- ROS1: Dependencies needed to compile this package. -->
+    <buildtool_depend condition="$ROS_VERSION == 1">catkin</buildtool_depend>
+    <depend condition="$ROS_VERSION == 1">cmake_modules</depend>
+    <depend condition="$ROS_VERSION == 1">roscpp</depend>
+    <depend condition="$ROS_VERSION == 1">rosbag</depend>
+    <depend condition="$ROS_VERSION == 1">tf</depend>
+    <depend condition="$ROS_VERSION == 1">std_msgs</depend>
+    <depend condition="$ROS_VERSION == 1">sensor_msgs</depend>
+    <depend condition="$ROS_VERSION == 1">geometry_msgs</depend>
+    <depend condition="$ROS_VERSION == 1">nav_msgs</depend>
+    <depend condition="$ROS_VERSION == 1">visualization_msgs</depend>
+    <depend condition="$ROS_VERSION == 1">image_transport</depend>
+    <depend condition="$ROS_VERSION == 1">cv_bridge</depend>
+    <depend condition="$ROS_VERSION == 1">ov_core</depend>
+    <depend condition="$ROS_VERSION == 1">ov_init</depend>
+    <depend condition="$ROS_VERSION == 1">ov_msckf</depend>
+    <depend condition="$ROS_VERSION == 1">nodelet</depend>
+    <depend condition="$ROS_VERSION == 1">mdek_uwb_driver</depend>
+
+    <!-- System dependencies for both versions -->
+    <depend>eigen</depend>
+    <depend>libopencv-dev</depend>
+    <depend>libopencv-contrib-dev</depend>
+    <depend>boost</depend>
+    <depend>libceres-dev</depend>
+
+    <!-- Note the export is required to expose the executables -->
+    <export>
+        <build_type condition="$ROS_VERSION == 1">catkin</build_type>
+        <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
+    </export>
+
+</package>

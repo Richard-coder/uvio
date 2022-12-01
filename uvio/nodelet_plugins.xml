@@ -1,0 +1,7 @@
+<library path="lib/lib_uvio_nodelet">
+  <class name="uvio/nodelet_uvio" type="uvio::NodeletUVIO" base_class_type="nodelet::Nodelet">
+    <description>
+      A nodelet for UVIO.
+    </description>
+  </class>
+</library>
