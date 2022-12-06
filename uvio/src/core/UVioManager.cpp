@@ -25,11 +25,6 @@ using namespace uvio;
 
 void UVioManager::feed_measurement_uwb(const UwbData &message)
 {
-  std::cout << "RECEIVED THE FOLLOWING UWB MEASUREMENT: " << std::endl;
-  for (const auto& it : message.uwb_ranges)
-  {
-    std::cout << "Anchor: " << it.first << "\nRange: " << it.second << std::endl;
-  }
 //  // If we do not have VIO initialization or if we are on the ground, then return
 //  // Note: UWB is poor on the ground, we do not use the measurement if the pose is
 //  // within a 50cm radius ball from the initial pose
@@ -37,4 +32,9 @@ void UVioManager::feed_measurement_uwb(const UwbData &message)
 //  if(!is_initialized_vio || dist < 0.5 || !are_initialized_anchors) {
 //    return;
 //  }
+
+  for (const auto& it : message.uwb_ranges)
+  {
+    PRINT_DEBUG(GREEN "[UWB]: anchor[%d] range = %.3f m\n", it.first, it.second);
+  }
 }

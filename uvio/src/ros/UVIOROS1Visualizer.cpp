@@ -26,16 +26,20 @@
 
 using namespace uvio;
 
-UVIOROS1Visualizer::UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app)
-  : ov_msckf::ROS1Visualizer(nh, app, nullptr), _app(app) {}
+UVIOROS1Visualizer::UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app, std::shared_ptr<ov_msckf::Simulator> sim)
+  : ov_msckf::ROS1Visualizer(nh, std::static_pointer_cast<ov_msckf::VioManager>(app), sim), _app(app)
+{
+
+}
 
 void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser)
 {
   ov_msckf::ROS1Visualizer::setup_subscribers(parser);
   std::string topic_uwb;
   _nh->param<std::string>("topic_uwb", topic_uwb, "/uwb");
-  parser->parse_external("config_uwb", "uwb", "rostopic", topic_uwb);
+  parser->parse_external("config_uwb", "uwb0", "rostopic", topic_uwb);
   _sub_uwb = _nh->subscribe(topic_uwb, 10, &UVIOROS1Visualizer::callback_uwb, this);
+  PRINT_DEBUG("subscribing to uwb: %s\n", topic_uwb.c_str());
 }
 
 void UVIOROS1Visualizer::callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uwb)

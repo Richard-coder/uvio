@@ -22,6 +22,8 @@
 #ifndef UVIO_SENSOR_DATA_H
 #define UVIO_SENSOR_DATA_H
 
+#include <unordered_map>
+
 namespace uvio
 {
 

@@ -39,9 +39,9 @@ public:
   using ov_msckf::VioManager::VioManager;
 
   /**
-  * @brief Feed function for a uwb set of measurements
-  * @param uwb measurements
-  */
+   * @brief Feed function for a uwb set of measurements
+   * @param uwb measurements
+   */
   void feed_measurement_uwb(const UwbData &message);
 
 };

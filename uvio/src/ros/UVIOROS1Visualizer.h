@@ -41,7 +41,7 @@ public:
    * @param app Core estimator manager
    * @param sim Simulator if we are simulating
    */
-  UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app);
+  UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app, std::shared_ptr<ov_msckf::Simulator> sim = nullptr);
 
   /**
    * @brief Wrapper to ov_msckf::ROS!Visualizer::setup_subscribers. Will setup ROS subscribers and callbacks
