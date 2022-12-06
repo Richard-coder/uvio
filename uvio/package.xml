@@ -40,6 +40,8 @@
     <depend>libopencv-contrib-dev</depend>
     <depend>boost</depend>
     <depend>libceres-dev</depend>
+    <depend>mdek_uwb_driver</depend>
+    <depend>nodelet</depend>
 
     <!-- Note the export is required to expose the executables -->
     <export>

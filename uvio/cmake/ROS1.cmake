@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.3)
 
 # Find ROS build system
-find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf)
+find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet)
 find_package(mdek_uwb_driver)
 
 # Describe ROS project
@@ -11,7 +11,7 @@ if (catkin_FOUND AND ENABLE_ROS)
     catkin_package(
             CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet mdek_uwb_driver
             INCLUDE_DIRS src/
-            LIBRARIES uvio_lib lib_uvio_nodelet
+            LIBRARIES uvio_lib uvio_nodelet
     )
 endif ()
 
@@ -41,6 +41,7 @@ list(APPEND thirdparty_libraries
 
 list(APPEND LIBRARY_SOURCES
     src/ros/UVIOROS1Visualizer.cpp
+    src/core/UVioManager.cpp
 )
 
 file(GLOB_RECURSE LIBRARY_HEADERS "src/*.h")
@@ -63,9 +64,9 @@ install(DIRECTORY src/
 
 if (catkin_FOUND AND ENABLE_ROS)
 
-    add_library(lib_uvio_nodelet src/uvio_nodelet.cpp)
-    target_link_libraries(lib_uvio_nodelet ${thirdparty_libraries})
-    install(TARGETS lib_uvio_nodelet
+    add_library(uvio_nodelet src/nodelet_uvio.cpp)
+    target_link_libraries(uvio_nodelet uvio_lib ${thirdparty_libraries})
+    install(TARGETS uvio_nodelet
             ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

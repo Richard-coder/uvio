@@ -1,9 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <launch>
 
     <!-- what config we are going to run (should match folder name) -->
-    <arg name="verbosity"   default="INFO" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
+    <arg name="verbosity"   default="DEBUG" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
     <arg name="config"      default="euroc_mav" /> <!-- euroc_mav, tum_vi, rpng_aruco -->
-    <arg name="config_path" default="$(find ov_msckf)/../config/$(arg config)/estimator_config.yaml" />
+    <arg name="config_path" default="$(find uvio)/../config/$(arg config)/estimator_config.yaml" />
 
     <!-- mono or stereo and what ros bag to play -->
     <arg name="max_cameras" default="2" />
@@ -26,10 +27,22 @@
     <arg name="dolivetraj"  default="false" />
     <arg name="path_gt"     default="$(find ov_data)/$(arg config)/$(arg dataset).txt" />
 
+    <!-- Nodelet -->
+    <arg name="enable_nodelet_manager"  default="true"/>
+    <arg name="nodelet_manager_name"    default="nodelet_manager"/>
+
+    <!-- Nodelet manager -->
+    <group if="$(arg enable_nodelet_manager)">
+        <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager_name)" args="manager" output="screen"/>
+    </group>
+
+    <!-- Debug server -->
+    <arg name="launchprefix"        default="gdbserver localhost:10000"/>
+
 
     <!-- MASTER NODE! -->
-<!--    <node name="ov_msckf" pkg="ov_msckf" type="run_subscribe_msckf" output="screen" clear_params="true" required="true" launch-prefix="gdb -ex run &#45;&#45;args">-->
-    <node name="ov_msckf" pkg="ov_msckf" type="run_subscribe_msckf" output="screen" clear_params="true" required="true">
+<!--    <node name="ov_msckf" pkg="ov_msckf" type="run_subscribe_msckf" output="screen" clear_params="true" required="false" launch-prefix="gdb -ex run &#45;&#45;args -->
+    <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false"> <!-- launch-prefix="$(arg launchprefix)" -->
 
         <!-- master configuration object -->
         <param name="verbosity"              type="string" value="$(arg verbosity)" />
