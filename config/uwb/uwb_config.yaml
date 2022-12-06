@@ -1,0 +1,4 @@
+%YAML:1.0
+
+uwb0:
+  rostopic: /uwb_driver_node/uwb
