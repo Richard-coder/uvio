@@ -35,6 +35,6 @@ void UVioManager::feed_measurement_uwb(const UwbData &message)
 
   for (const auto& it : message.uwb_ranges)
   {
-    PRINT_DEBUG(GREEN "[UWB]: anchor[%d] range = %.3f m\n", it.first, it.second);
+    PRINT_DEBUG(GREEN "[UWB]: anchor[%d] range = %.3f m\n" RESET, it.first, it.second);
   }
 }
