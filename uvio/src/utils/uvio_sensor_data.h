@@ -23,6 +23,7 @@
 #define UVIO_SENSOR_DATA_H
 
 #include <unordered_map>
+#include <Eigen/Eigen>
 
 namespace uvio
 {
@@ -43,6 +44,23 @@ struct UwbData {
     bool operator<(const UwbData& other) const {
         return timestamp < other.timestamp;
     }
+};
+
+/**
+ * @brief Struct for anchors information (id, anchors)
+ */
+struct AnchorData {
+
+    /// anchor id
+    size_t id;
+
+    /// Biases
+    double const_bias;
+    double dist_bias;
+
+    /// p_AinG
+    Eigen::Vector3d p_AinG;
+
 };
 
 }
