@@ -23,6 +23,7 @@
 #define UVIO_TYPE_UWB_ANCHOR_H
 
 #include "types/Vec.h"
+#include "utils/uvio_sensor_data.h"
 
 namespace uvio {
 
@@ -52,6 +53,23 @@ public:
     set_fej_internal(uwb_anchor0);
   }
 
+  UWB_anchor(AnchorData anchor) : ov_type::Type(5) {
+
+    // Set UWB anchor id
+    _anchor_id = anchor.id;
+
+    // Create all the sub-variables
+    _p_AinG = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(3));
+    _const_bias = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(1));
+    _dist_bias = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(1));
+
+    // Set our default state value
+    Eigen::VectorXd uwb_anchor0 = Eigen::VectorXd::Zero(5, 1);
+    uwb_anchor0 << anchor.p_AinG, anchor.const_bias, anchor.dist_bias;
+    set_value_internal(uwb_anchor0);
+    set_fej_internal(uwb_anchor0);
+  }
+
   ~UWB_anchor() {}
 
   /**
@@ -61,7 +79,7 @@ public:
    *
    * @param new_id entry in filter covariance corresponding to this variable
    */
-  inline void set_local_id(int new_id) override {
+  void set_local_id(int new_id) override {
     _id = new_id;
     _p_AinG->set_local_id(new_id);
     _const_bias->set_local_id(_p_AinG->id() + ((new_id != -1) ? _p_AinG->size() : 0));
@@ -72,22 +90,22 @@ public:
    * @brief Sets the value of the estimate
    * @param new_value New value we should set
    */
-  inline void set_value(const Eigen::MatrixXd &new_value) override { set_value_internal(new_value); }
+  void set_value(const Eigen::MatrixXd &new_value) override { set_value_internal(new_value); }
 
   /**
    * @brief Sets the value of the first estimate
    * @param new_value New value we should set
    */
-  inline void set_fej(const Eigen::MatrixXd &new_value) override { set_fej_internal(new_value); }
+  void set_fej(const Eigen::MatrixXd &new_value) override { set_fej_internal(new_value); }
 
-  inline std::shared_ptr<ov_type::Type> clone() override {
+  std::shared_ptr<ov_type::Type> clone() override {
     auto Clone = std::shared_ptr<ov_type::Type>(std::make_shared<UWB_anchor>(_anchor_id));
     Clone->set_value(value());
     Clone->set_fej(fej());
     return Clone;
   }
 
-  inline std::shared_ptr<ov_type::Type> check_if_subvariable(const std::shared_ptr<Type> check) override {
+  std::shared_ptr<ov_type::Type> check_if_subvariable(const std::shared_ptr<Type> check) override {
     if (check == _p_AinG) {
       return _p_AinG;
     } else if (check == _const_bias) {
@@ -99,16 +117,16 @@ public:
   }
 
   /// Anchor id type access
-  inline size_t anchor_id() { return _anchor_id; }
+  size_t anchor_id() { return _anchor_id; }
 
   /// Position type access
-  inline std::shared_ptr<ov_type::Vec> p_AinG() { return _p_AinG; }
+  std::shared_ptr<ov_type::Vec> p_AinG() { return _p_AinG; }
 
   /// Constant type access
-  inline std::shared_ptr<ov_type::Vec> const_bias() { return _const_bias; }
+  std::shared_ptr<ov_type::Vec> const_bias() { return _const_bias; }
 
   /// Distance bias access
-  inline std::shared_ptr<ov_type::Vec> dist_bias() { return _dist_bias; }
+  std::shared_ptr<ov_type::Vec> dist_bias() { return _dist_bias; }
 
 protected:
   /// UWB anchor id
@@ -127,7 +145,7 @@ protected:
    * @brief Sets the value of the estimate
    * @param new_value New value we should set
    */
-  inline void set_value_internal(const Eigen::MatrixXd &new_value) {
+  void set_value_internal(const Eigen::MatrixXd &new_value) {
 
     assert(new_value.rows() == 5);
     assert(new_value.cols() == 1);
@@ -143,7 +161,7 @@ protected:
    * @brief Sets the value of the first estimate
    * @param new_value New value we should set
    */
-  inline void set_fej_internal(const Eigen::MatrixXd &new_value) {
+  void set_fej_internal(const Eigen::MatrixXd &new_value) {
 
     assert(new_value.rows() == 5);
     assert(new_value.cols() == 1);
