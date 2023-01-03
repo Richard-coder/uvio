@@ -42,6 +42,7 @@ list(APPEND thirdparty_libraries
 list(APPEND LIBRARY_SOURCES
     src/ros/UVIOROS1Visualizer.cpp
     src/core/UVioManager.cpp
+    src/state/UVioState.cpp
 )
 
 file(GLOB_RECURSE LIBRARY_HEADERS "src/*.h")
