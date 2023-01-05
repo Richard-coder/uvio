@@ -61,6 +61,8 @@ struct AnchorData {
     /// p_AinG
     Eigen::Vector3d p_AinG;
 
+    /// covariance of the estimation (5x5)
+    Eigen::MatrixXd cov;
 };
 
 }
