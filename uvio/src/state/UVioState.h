@@ -55,14 +55,6 @@ public:
   /// Positions of the uwb anchors (id, UWB_anchor)
   std::unordered_map<size_t, std::shared_ptr<UWB_anchor>> _calib_GLOBALtoANCHORS;
 
-private:
-
-  /// Size of state for initialization
-  int _size = -1;
-
-  /// Initialize new states
-  void initialize();
-
 };
 
 } // namespace uvio
