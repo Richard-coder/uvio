@@ -19,21 +19,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <memory>
-#include <ros/ros.h>
-#include <nodelet/nodelet.h>
 #include <core/UVioManager.h>
-#include <core/VioManagerOptions.h>
-#include <utils/dataset_reader.h>
+#include <core/UVioManagerOptions.h>
+#include <memory>
+#include <nodelet/nodelet.h>
 #include <ros/UVIOROS1Visualizer.h>
+#include <ros/ros.h>
+#include <utils/dataset_reader.h>
 
 namespace uvio {
 
-class NodeletUVIO : public nodelet::Nodelet
-{
+class NodeletUVIO : public nodelet::Nodelet {
 
 private:
-
   /// Init
   virtual void onInit();
 
@@ -52,11 +50,9 @@ private:
 
   /// Booleans
   bool tcp_no_delay_ = false;
-
 };
 
-void NodeletUVIO::onInit()
-{
+void NodeletUVIO::onInit() {
 
   NODELET_INFO("Initializing UVIO nodelet...");
 
@@ -85,9 +81,10 @@ void NodeletUVIO::onInit()
   ov_core::Printer::setPrintLevel(verbosity);
 
   // Create our VIO system
-  ov_msckf::VioManagerOptions params;
+  UVioManagerOptions params;
   params.print_and_load(parser);
   params.use_multi_threading_subs = true;
+  //  params.uvio_state_options.print_and_load(parser); // To uncomment, commented now for testing
   sys_ = std::make_shared<UVioManager>(params);
   viz_ = std::make_shared<UVIOROS1Visualizer>(private_nh_, sys_);
   viz_->setup_subscribers(parser);
@@ -98,7 +95,7 @@ void NodeletUVIO::onInit()
     std::exit(EXIT_FAILURE);
   }
 }
-}
+} // namespace uvio
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(uvio::NodeletUVIO, nodelet::Nodelet)

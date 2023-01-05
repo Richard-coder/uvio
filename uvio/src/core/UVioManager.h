@@ -22,21 +22,20 @@
 #ifndef UVIO_MANAGER_H
 #define UVIO_MANAGER_H
 
+#include <core/UVioManagerOptions.h>
 #include <core/VioManager.h>
+#include <state/UVioState.h>
 #include <utils/uvio_sensor_data.h>
 
-namespace uvio
-{
+namespace uvio {
 
-class UVioManager : public ov_msckf::VioManager
-{
+class UVioManager : public ov_msckf::VioManager {
 
 public:
-
   /**
-   * @brief Inherit constructor
+   * @brief Constructor
    */
-  using ov_msckf::VioManager::VioManager;
+  UVioManager(UVioManagerOptions &params);
 
   /**
    * @brief Feed function for a uwb set of measurements
@@ -44,6 +43,9 @@ public:
    */
   void feed_measurement_uwb(const UwbData &message);
 
+private:
+  /// UVIO state
+  std::shared_ptr<UVioState> uvio_state;
 };
 
 } // namespace uvio

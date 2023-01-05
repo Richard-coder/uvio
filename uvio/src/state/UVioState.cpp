@@ -23,18 +23,15 @@
 
 using namespace uvio;
 
-UVioState::UVioState(UVioStateOptions &options) : ov_msckf::State(options), _options(options)
-{
+UVioState::UVioState(const ov_msckf::State &state, UVioStateOptions &options) : ov_msckf::State(state), _uvio_options(options) {
   /// If enabled add to state variables calibration UWB tag - IMU
   /// NOTE! This initialization can also be done later in UVioManager.cpp (as for the anchors)
-  if (_options.do_calib_uwb_position)
-  {
+  if (_uvio_options.do_calib_uwb_position) {
     std::vector<std::shared_ptr<ov_type::Type>> H_order;
     Eigen::MatrixXd H_R;
     Eigen::Matrix3d H_L = Eigen::Matrix3d::Identity();
-    Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * _options.prior_uwb_imu_cov;
+    Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * _uvio_options.prior_uwb_imu_cov;
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
-
     ov_msckf::StateHelper::initialize_invertible(shared_from_this(), _calib_UWBtoIMU, H_order, H_R, H_L, R, res);
   }
 }

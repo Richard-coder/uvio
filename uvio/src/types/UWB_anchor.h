@@ -53,22 +53,22 @@ public:
     set_fej_internal(uwb_anchor0);
   }
 
-  //  UWB_anchor(AnchorData anchor) : ov_type::Type(5) {
+  UWB_anchor(AnchorData anchor) : ov_type::Type(5) {
 
-  //    // Set UWB anchor id
-  //    _anchor_id = anchor.id;
+    // Set UWB anchor id
+    _anchor_id = anchor.id;
 
-  //    // Create all the sub-variables
-  //    _p_AinG = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(3));
-  //    _const_bias = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(1));
-  //    _dist_bias = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(1));
+    // Create all the sub-variables
+    _p_AinG = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(3));
+    _const_bias = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(1));
+    _dist_bias = std::shared_ptr<ov_type::Vec>(new ov_type::Vec(1));
 
-  //    // Set our default state value
-  //    Eigen::VectorXd uwb_anchor0 = Eigen::VectorXd::Zero(5, 1);
-  //    uwb_anchor0 << anchor.p_AinG, anchor.const_bias, anchor.dist_bias;
-  //    set_value_internal(uwb_anchor0);
-  //    set_fej_internal(uwb_anchor0);
-  //  }
+    // Set our default state value
+    Eigen::VectorXd uwb_anchor0 = Eigen::VectorXd::Zero(5, 1);
+    uwb_anchor0 << anchor.p_AinG, anchor.const_bias, anchor.dist_bias;
+    set_value_internal(uwb_anchor0);
+    set_fej_internal(uwb_anchor0);
+  }
 
   ~UWB_anchor() {}
 

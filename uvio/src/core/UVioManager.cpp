@@ -23,18 +23,29 @@
 
 using namespace uvio;
 
-void UVioManager::feed_measurement_uwb(const UwbData &message)
-{
-//  // If we do not have VIO initialization or if we are on the ground, then return
-//  // Note: UWB is poor on the ground, we do not use the measurement if the pose is
-//  // within a 50cm radius ball from the initial pose
-//  double dist = Eigen::Vector3d(state->_imu->pos() - state->_imu0->pos()).norm();
-//  if(!is_initialized_vio || dist < 0.5 || !are_initialized_anchors) {
-//    return;
-//  }
+UVioManager::UVioManager(UVioManagerOptions &params) : ov_msckf::VioManager::VioManager(params) {
 
-  for (const auto& it : message.uwb_ranges)
-  {
+  // [COMMENT] VioManager (the parent class) initialize the state and holds a pointer to the state.
+  // The uvio state is defined as a pointer and it can be initialized calling the copy constructor of the base class
+  uvio_state = std::make_shared<UVioState>(*this->get_state(), params.uvio_state_options);
+
+  // [DEBUG] If correct than cam intrinsic should have the correct inizialized value from VioManager
+  std::cout << "\n\nCam intrinsic: " << uvio_state->_cam_intrinsics.at(0)->value() << "\n\n" << std::endl;
+
+  // [COMMENT] Tested it works so at this point uvio state has the "State" part already initialized and
+  // the only thing to do is to initialize (set value and fej) of _calib_UWBtoIMU
+}
+
+void UVioManager::feed_measurement_uwb(const UwbData &message) {
+  //  // If we do not have VIO initialization or if we are on the ground, then return
+  //  // Note: UWB is poor on the ground, we do not use the measurement if the pose is
+  //  // within a 50cm radius ball from the initial pose
+  //  double dist = Eigen::Vector3d(state->_imu->pos() - state->_imu0->pos()).norm();
+  //  if(!is_initialized_vio || dist < 0.5 || !are_initialized_anchors) {
+  //    return;
+  //  }
+
+  for (const auto &it : message.uwb_ranges) {
     PRINT_DEBUG(GREEN "[UWB]: anchor[%d] range = %.3f m\n" RESET, it.first, it.second);
   }
 }

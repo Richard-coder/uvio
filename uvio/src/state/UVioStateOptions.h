@@ -22,14 +22,17 @@
 #ifndef UVIO_STATE_OPTIONS_H
 #define UVIO_STATE_OPTIONS_H
 
-#include "state/StateOptions.h"
+#include "utils/opencv_yaml_parse.h"
+#include "utils/print.h"
 
 namespace uvio {
 
+// [COMMENT] We dont need to extend StateOption we can simply keep these separate, no benefit on extending this one
+
 /**
- * @brief Struct which stores all our filter options
+ * @brief Struct which stores uvio specific options
  */
-struct UVioStateOptions : public ov_msckf::StateOptions {
+struct UVioStateOptions {
 
   /// Int to determine the number of uwb anchors
   int n_anchors = 0;
@@ -45,9 +48,7 @@ struct UVioStateOptions : public ov_msckf::StateOptions {
   double prior_uwb_anchor_cov = 0.1;
 
   /// Nice print function of what parameters we have loaded
-  void print(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
-
-    ov_msckf::StateOptions::print(parser);
+  void print_and_load(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
 
     if (parser != nullptr) {
       parser->parse_config("calib_uwb_extrinsics", do_calib_uwb_position);
@@ -59,7 +60,6 @@ struct UVioStateOptions : public ov_msckf::StateOptions {
     PRINT_DEBUG("  - prior_uwb_imu_cov: %.4f\n", prior_uwb_imu_cov);
     PRINT_DEBUG("  - prior_uwb_anchor_global_cov: %.4f\n", prior_uwb_anchor_cov);
   }
-
 };
 
 } // namespace uvio

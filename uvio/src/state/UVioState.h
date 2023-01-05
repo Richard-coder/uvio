@@ -22,9 +22,9 @@
 #ifndef UVIO_STATE_H
 #define UVIO_STATE_H
 
+#include "UVioStateOptions.h"
 #include "state/State.h"
 #include "state/StateHelper.h"
-#include "UVioStateOptions.h"
 #include "types/UWB_anchor.h"
 
 namespace uvio {
@@ -37,26 +37,71 @@ namespace uvio {
  * We additionally have more parameters for online estimation of calibration and SLAM features.
  * We also have the covariance of the system, which should be managed using the StateHelper class.
  */
-class UVioState : public ov_msckf::State, public std::enable_shared_from_this<UVioState>
-{
+class UVioState : public ov_msckf::State, public std::enable_shared_from_this<UVioState> {
 
 public:
-
-  UVioState(UVioStateOptions &options);
+  UVioState(const ov_msckf::State &state, UVioStateOptions &options);
 
   ~UVioState() {}
 
   /// Struct containing filter options
-  UVioStateOptions _options;
+  UVioStateOptions _uvio_options;
 
   /// Calibration position for the uwb sensor (p_IinU)
   std::shared_ptr<ov_type::Vec> _calib_UWBtoIMU = std::make_shared<ov_type::Vec>(3);
 
   /// Positions of the uwb anchors (id, UWB_anchor)
   std::unordered_map<size_t, std::shared_ptr<UWB_anchor>> _calib_GLOBALtoANCHORS;
-
 };
 
 } // namespace uvio
 
 #endif // UVIO_STATE_H
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+// #include <iostream>
+// #include <memory>
+
+// using namespace std;
+
+// struct State
+//{
+//     int x_ = 10;
+// };
+
+// struct UState : State
+//{
+//     int y_ = 20;
+// };
+
+// struct Manager
+//{
+//     shared_ptr<State> state_ = make_shared<State>();
+// };
+
+// struct UManager : Manager
+//{
+//     shared_ptr<UState> u_state_ = make_shared<UState>();
+// };
+
+// void print_x(shared_ptr<State> s)
+//{
+//     cout << s->x_ << endl;
+// }
+
+// int main()
+//{
+//     UManager um;
+//     print_x(um.u_state_);
+
+//    return 0;
+//}
