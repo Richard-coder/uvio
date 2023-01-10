@@ -27,13 +27,63 @@ UVioManager::UVioManager(UVioManagerOptions &params) : ov_msckf::VioManager::Vio
 
   // [COMMENT] VioManager (the parent class) initialize the state and holds a pointer to the state.
   // The uvio state is defined as a pointer and it can be initialized calling the copy constructor of the base class
-  uvio_state = std::make_shared<UVioState>(*this->get_state(), params.uvio_state_options);
+  state = std::make_shared<UVioState>(*this->get_state(), params.uvio_state_options);
 
-  // [DEBUG] If correct than cam intrinsic should have the correct inizialized value from VioManager
-  std::cout << "\n\nCam intrinsic: " << uvio_state->_cam_intrinsics.at(0)->value() << "\n\n" << std::endl;
+  // [DEBUG]
+  std::cout << "\n\n[DEBUG] State dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
 
   // [COMMENT] Tested it works so at this point uvio state has the "State" part already initialized and
   // the only thing to do is to initialize (set value and fej) of _calib_UWBtoIMU
+  if (params.uvio_state_options.do_calib_uwb_position) {
+    std::vector<std::shared_ptr<ov_type::Type>> H_order;
+    Eigen::MatrixXd H_R = Eigen::Matrix3d::Zero();
+    Eigen::Matrix3d H_L = Eigen::Matrix3d::Identity();
+    Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * params.uvio_state_options.prior_uwb_imu_cov;
+    Eigen::Vector3d res = Eigen::Vector3d::Zero();
+    ov_msckf::StateHelper::initialize_invertible(state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
+
+    // Our UWB sensor extrinsic transform
+    state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
+    state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
+  }
+
+  // [DEBUG]
+  std::cout << "\n\n[DEBUG] State dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
+
+  // [TEMPORARY DEBUG] Vector of anchors
+  for (size_t i = 0; i < 4; i++) {
+    AnchorData tmp;
+    tmp.id = 147*i;
+    tmp.p_AinG = Eigen::Vector3d::Constant(i);
+    tmp.const_bias = i + 0.5;
+    tmp.dist_bias = i + 0.1;
+    tmp.cov = Eigen::MatrixXd::Identity(5, 5);
+    params.uwb_anchor_extrinsics.push_back(tmp);
+  }
+
+  // Insert anchors
+  for (const auto &it : params.uwb_anchor_extrinsics) {
+    std::shared_ptr<UWB_anchor> anchor = std::make_shared<UWB_anchor>(it);
+    state->_calib_GLOBALtoANCHORS.insert({it.id, anchor});
+
+    // Initialize state variable
+    if (params.uvio_state_options.do_calib_uwb_anchors) {
+      // Initialize state variables
+      std::vector<std::shared_ptr<ov_type::Type>> H_order;
+      Eigen::MatrixXd H_R = Eigen::MatrixXd::Zero(5, 5);
+      Eigen::MatrixXd H_L = Eigen::MatrixXd::Identity(5, 5);
+      Eigen::MatrixXd R = it.cov;
+      Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
+      ov_msckf::StateHelper::initialize_invertible(state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
+    }
+  }
+
+  // [DEBUG] Check if state is correctly initialized
+  std::cout << "\n\n[DEBUG] Final state dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
+  for (const auto &it : state->_calib_GLOBALtoANCHORS) {
+    std::cout << "\n\n[DEBUG] Anchor[" << it.first << "] state id: " << it.second->id() << "\n\n" << std::endl;
+    std::cout << "\n\n[DEBUG] Anchor[" << it.first << "] state value:\n" << it.second->value() << "\n\n" << std::endl;
+  }
 }
 
 void UVioManager::feed_measurement_uwb(const UwbData &message) {

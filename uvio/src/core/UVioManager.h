@@ -25,7 +25,6 @@
 #include <core/UVioManagerOptions.h>
 #include <core/VioManager.h>
 #include <state/UVioState.h>
-#include <utils/uvio_sensor_data.h>
 
 namespace uvio {
 
@@ -45,7 +44,7 @@ public:
 
 private:
   /// UVIO state
-  std::shared_ptr<UVioState> uvio_state;
+  std::shared_ptr<UVioState> state;
 };
 
 } // namespace uvio
