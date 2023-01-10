@@ -27,21 +27,16 @@
 
 namespace uvio {
 
-// [COMMENT] We dont need to extend StateOption we can simply keep these separate, no benefit on extending this one
-
 /**
  * @brief Struct which stores uvio specific options
  */
 struct UVioStateOptions {
 
-  /// Int to determine the number of uwb anchors
-  int n_anchors = 0;
-
   /// Bool to determine whether or not to calibrate imu-to-uwb module position
-  bool do_calib_uwb_position = false;
+  bool do_calib_uwb_position = true;
 
   /// Bool to determine whether or not to calibrate uwb anchors global position
-  bool do_calib_uwb_anchors_position = false;
+  bool do_calib_uwb_anchors = true;
 
   /// Prior covariances
   double prior_uwb_imu_cov = 0.1;
@@ -52,11 +47,9 @@ struct UVioStateOptions {
 
     if (parser != nullptr) {
       parser->parse_config("calib_uwb_extrinsics", do_calib_uwb_position);
-      parser->parse_config("n_uwb_anchors", n_anchors);
     }
     PRINT_DEBUG("  - calib_uwb_extrinsics: %d\n", do_calib_uwb_position);
-    PRINT_DEBUG("  - calib_uwb_anchors: %d\n", do_calib_uwb_anchors_position);
-    PRINT_DEBUG("  - n_uwb_anchors: %d\n", n_anchors);
+    PRINT_DEBUG("  - calib_uwb_anchors: %d\n", do_calib_uwb_anchors);
     PRINT_DEBUG("  - prior_uwb_imu_cov: %.4f\n", prior_uwb_imu_cov);
     PRINT_DEBUG("  - prior_uwb_anchor_global_cov: %.4f\n", prior_uwb_anchor_cov);
   }
