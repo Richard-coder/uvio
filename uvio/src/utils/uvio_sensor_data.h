@@ -54,9 +54,12 @@ struct AnchorData {
     /// anchor id
     size_t id;
 
-    /// Biases
-    double const_bias;
-    double dist_bias;
+    /// Fixed anchor (no state update)
+    bool fix = false;
+
+    /// Biases (y = d + dist_bias * d + const_bias + noise)
+    double const_bias = 0;
+    double dist_bias = 0;
 
     /// p_AinG
     Eigen::Vector3d p_AinG;

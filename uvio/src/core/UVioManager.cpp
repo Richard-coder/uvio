@@ -53,7 +53,8 @@ UVioManager::UVioManager(UVioManagerOptions &params) : ov_msckf::VioManager::Vio
   // [TEMPORARY DEBUG] Vector of anchors
   for (size_t i = 0; i < 4; i++) {
     AnchorData tmp;
-    tmp.id = 147*i;
+    tmp.id = i + 110;
+    tmp.fix = (i < 2) ? true : false;
     tmp.p_AinG = Eigen::Vector3d::Constant(i);
     tmp.const_bias = i + 0.5;
     tmp.dist_bias = i + 0.1;
@@ -66,24 +67,22 @@ UVioManager::UVioManager(UVioManagerOptions &params) : ov_msckf::VioManager::Vio
     std::shared_ptr<UWB_anchor> anchor = std::make_shared<UWB_anchor>(it);
     state->_calib_GLOBALtoANCHORS.insert({it.id, anchor});
 
-    // Initialize state variable
-    if (params.uvio_state_options.do_calib_uwb_anchors) {
+    // Initialize state variable if option enabled and anchor not fixed
+    if (params.uvio_state_options.do_calib_uwb_anchors && !it.fix) {
       // Initialize state variables
       std::vector<std::shared_ptr<ov_type::Type>> H_order;
       Eigen::MatrixXd H_R = Eigen::MatrixXd::Zero(5, 5);
       Eigen::MatrixXd H_L = Eigen::MatrixXd::Identity(5, 5);
       Eigen::MatrixXd R = it.cov;
       Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
-      ov_msckf::StateHelper::initialize_invertible(state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
+      ov_msckf::StateHelper::initialize_invertible(
+            state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
+      std::cout << "\n\n[DEBUG] Added anchor[" << it.id << "] to state\n\n" << std::endl;
     }
   }
 
   // [DEBUG] Check if state is correctly initialized
   std::cout << "\n\n[DEBUG] Final state dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
-  for (const auto &it : state->_calib_GLOBALtoANCHORS) {
-    std::cout << "\n\n[DEBUG] Anchor[" << it.first << "] state id: " << it.second->id() << "\n\n" << std::endl;
-    std::cout << "\n\n[DEBUG] Anchor[" << it.first << "] state value:\n" << it.second->value() << "\n\n" << std::endl;
-  }
 }
 
 void UVioManager::feed_measurement_uwb(const UwbData &message) {
