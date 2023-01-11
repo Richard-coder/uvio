@@ -34,7 +34,7 @@ public:
   /**
    * @brief Constructor
    */
-  UVioManager(UVioManagerOptions &params);
+  UVioManager(UVioManagerOptions &params_);
 
   /**
    * @brief Feed function for a uwb set of measurements
@@ -42,9 +42,32 @@ public:
    */
   void feed_measurement_uwb(const UwbData &message);
 
+  /// Accessor to get the current uvio state
+  inline std::shared_ptr<UVioState> get_uvio_state() { return state; }
+
 private:
+  /// Manager parameters
+  UVioManagerOptions params;
+
   /// UVIO state
   std::shared_ptr<UVioState> state;
+
+  /**
+   * @brief This function will initialize UWB anchors into the state.
+   */
+  void initialize_uwb_anchors(const std::vector<AnchorData> &anchors);
+
+  /**
+  * @brief This will do the propagation and uwb update to the state
+  * @param Reference to pointer to uwb range measurements
+  */
+  void do_uwb_propagate_update(const std::shared_ptr<UwbData>& message);
+
+  /// Our uwb updater
+  // std::unique_ptr<UpdaterUWB> updaterUWB;
+
+  /// Boolean if uwb anchors are initialized or not
+  bool are_initialized_anchors = false;
 };
 
 } // namespace uvio
