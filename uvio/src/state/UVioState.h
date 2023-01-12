@@ -40,12 +40,12 @@ namespace uvio {
 class UVioState : public ov_msckf::State {
 
 public:
-  UVioState(const ov_msckf::State &state, UVioStateOptions &options) : ov_msckf::State(state), _uvio_options(options) {}
+  UVioState(const ov_msckf::State &state, UVioStateOptions &options) : ov_msckf::State(state), _options(options) {}
 
   ~UVioState() {}
 
   /// Struct containing filter options
-  UVioStateOptions _uvio_options;
+  UVioStateOptions _options;
 
   /// Calibration position for the uwb sensor (p_IinU)
   std::shared_ptr<ov_type::Vec> _calib_UWBtoIMU = std::make_shared<ov_type::Vec>(3);

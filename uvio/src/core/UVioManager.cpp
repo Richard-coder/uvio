@@ -29,9 +29,6 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
   // The uvio state is defined as a pointer and it can be initialized calling the copy constructor of the base class
   state = std::make_shared<UVioState>(*this->get_state(), params.uvio_state_options);
 
-  // [DEBUG]
-  std::cout << "\n\n[DEBUG] State dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
-
   // [COMMENT] Tested it works so at this point uvio state has the "State" part already initialized and
   // the only thing to do is to initialize (set value and fej) of _calib_UWBtoIMU
   if (params.uvio_state_options.do_calib_uwb_position) {
@@ -47,9 +44,6 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
   state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
   state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
 
-  // [DEBUG]
-  std::cout << "\n\n[DEBUG] State dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
-
   // [TEMPORARY DEBUG] Vector of anchors
   for (size_t i = 0; i < 4; i++) {
     AnchorData tmp;
@@ -58,7 +52,7 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     tmp.p_AinG = Eigen::Vector3d::Constant(i);
     tmp.const_bias = i + 0.5;
     tmp.dist_bias = i + 0.1;
-    tmp.cov = Eigen::MatrixXd::Identity(5, 5);
+    tmp.cov = Eigen::MatrixXd::Identity(5, 5) * 0.017;
     params.uwb_anchor_extrinsics.push_back(tmp);
   }
 
@@ -66,9 +60,6 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
   if (!params.uwb_anchor_extrinsics.empty()) {
     initialize_uwb_anchors(params.uwb_anchor_extrinsics);
   }
-
-  // [DEBUG] Check if state is correctly initialized
-  std::cout << "\n\n[DEBUG] Final state dimension: " << state->max_covariance_size() << "\n\n" << std::endl;
 
   // Make the updater!
   // updaterUWB = std::make_unique<UpdaterUWB>(params.uwb_options);
