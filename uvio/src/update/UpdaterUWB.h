@@ -6,47 +6,46 @@
  * You can contact the author at <alessandro.fornasier@aau.at>
  */
 
-#ifndef OV_MS_MSCKF_UPDATER_UWB_H_
-#define OV_MS_MSCKF_UPDATER_UWB_H_
+#ifndef UVIO_UPDATER_UWB_H_
+#define UVIO_UPDATER_UWB_H_
 
 #include <Eigen/Eigen>
-#include "state/State.h"
-#include "state/StateHelper.h"
+#include "state/UVioState.h"
 #include "utils/quat_ops.h"
 #include "utils/colors.h"
 
-#include "UpdaterHelper.h"
-#include "UpdaterOptions.h"
+#include "update/UVioUpdaterHelper.h"
+#include "update/UVioUpdaterOptions.h"
 
 #include <boost/math/distributions/chi_squared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 
-namespace bw2_ms_msckf {
+namespace uvio {
 
-    class UpdaterUWB{
+class UpdaterUWB{
 
-    public:
+public:
 
-        UpdaterUWB(UpdaterOptions &_options_uwb) : _options_uwb(_options_uwb){
-            // Initialize the chi squared test table with confidence level 0.95
-            // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
-            for (int i = 1; i < 500; i++) {
-                boost::math::chi_squared chi_squared_dist(i);
-                chi_squared_table[i] = boost::math::quantile(chi_squared_dist, 0.95);
-            }
-        }
+  UpdaterUWB(UVioUpdaterOptions &options_) : _options(options_) {
+    // Initialize the chi squared test table with confidence level 0.95
+    // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
+    for (int i = 1; i < 500; i++) {
+      boost::math::chi_squared chi_squared_dist(i);
+      _chi_squared_table[i] = boost::math::quantile(chi_squared_dist, 0.95);
+    }
+  }
 
-        void update(std::shared_ptr<State> state, const std::shared_ptr<ov_core::UwbData>& message);
+  void update(std::shared_ptr<UVioState> state, const std::shared_ptr<UwbData>& message);
 
-    protected:
+protected:
 
-        /// Options used during update
-        UpdaterOptions _options_uwb;
+  /// Options used during update
+  UVioUpdaterOptions _options;
 
-        /// Chi squared 95th percentile table (lookup would be size of residual)
-        std::map<int, double> chi_squared_table;
-    };
+  /// Chi squared 95th percentile table (lookup would be size of residual)
+  std::map<int, double> _chi_squared_table;
+};
 }
 
-#endif //OV_MS_MSCKF_UPDATER_UWB_H_
+#endif //UVIO_UPDATER_UWB_H_
