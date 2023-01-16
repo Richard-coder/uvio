@@ -44,6 +44,7 @@ list(APPEND LIBRARY_SOURCES
     src/core/UVioManager.cpp
     src/update/UpdaterUWB.cpp
     src/update/UVioUpdaterHelper.cpp
+    src/state/UVioPropagator.cpp
 )
 
 file(GLOB_RECURSE LIBRARY_HEADERS "src/*.h")
