@@ -44,7 +44,7 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
   state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
   state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
 
-  // [TEMPORARY DEBUG] Vector of anchors
+  // [TMP DEBUG] Vector of anchors
   for (size_t i = 0; i < 4; i++) {
     AnchorData tmp;
     tmp.id = i + 110;
@@ -61,14 +61,19 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     initialize_uwb_anchors(params.uwb_anchor_extrinsics);
   }
 
+  // [TMP DEBUG] print covariance of claibration uwb-imu
+  std::cout << "UWB calibration covariance: " << ov_msckf::StateHelper::get_marginal_covariance(state, {state->_calib_UWBtoIMU}) << std::endl;
+
   // Make the updater!
-  // updaterUWB = std::make_unique<UpdaterUWB>(params.uwb_options);
+  updaterUWB = std::make_unique<UpdaterUWB>(params.uwb_options);
 }
 
 void UVioManager::feed_measurement_uwb(const UwbData &message) {
   //  // If we do not have VIO initialization or if we are on the ground, then return
   //  // Note: UWB is poor on the ground, we do not use the measurement if the pose is
   //  // within a 50cm radius ball from the initial pose
+
+  // TODO: there is no more _imu0
 //  double dist = Eigen::Vector3d(state->_imu->pos() - state->_imu0->pos()).norm();
   if(!is_initialized_vio ||/* dist < 0.5 ||*/ !are_initialized_anchors) {
     return;
@@ -96,9 +101,9 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
       Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
       ov_msckf::StateHelper::initialize_invertible(
             state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
-      std::cout << "\n\n[DEBUG] Added anchor[" << it.id << "] to state\n\n" << std::endl;
+      PRINT_DEBUG("Added anchor[%d] to state.\n", it.id);
     }
   }
   are_initialized_anchors = true;
-  std::cout << "\n\n[DEBUG] Anchors initialized\n\n" << std::endl;
+  PRINT_DEBUG("Anchors initialized.\n");
 }

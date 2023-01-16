@@ -22,9 +22,10 @@
 #ifndef UVIO_MANAGER_H
 #define UVIO_MANAGER_H
 
-#include <core/UVioManagerOptions.h>
-#include <core/VioManager.h>
-#include <state/UVioState.h>
+#include "core/UVioManagerOptions.h"
+#include "core/VioManager.h"
+#include "state/UVioState.h"
+#include "update/UpdaterUWB.h"
 
 namespace uvio {
 
@@ -64,7 +65,7 @@ private:
   void do_uwb_propagate_update(const std::shared_ptr<UwbData>& message);
 
   /// Our uwb updater
-  // std::unique_ptr<UpdaterUWB> updaterUWB;
+  std::unique_ptr<UpdaterUWB> updaterUWB;
 
   /// Boolean if uwb anchors are initialized or not
   bool are_initialized_anchors = false;
