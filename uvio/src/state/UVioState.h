@@ -37,10 +37,9 @@ namespace uvio {
  * We additionally have more parameters for online estimation of calibration and SLAM features.
  * We also have the covariance of the system, which should be managed using the StateHelper class.
  */
-class UVioState : public ov_msckf::State {
+struct UVioState{
 
-public:
-  UVioState(const ov_msckf::State &state, UVioStateOptions &options) : ov_msckf::State(state), _options(options) {}
+  UVioState(UVioStateOptions &options, std::shared_ptr<ov_msckf::State> state) : _options(options), _state(state) {}
 
   ~UVioState() {}
 
@@ -52,6 +51,9 @@ public:
 
   /// Positions of the uwb anchors (id, UWB_anchor)
   std::unordered_map<size_t, std::shared_ptr<UWB_anchor>> _calib_GLOBALtoANCHORS;
+
+  /// Pointer to the ov_msckf::State object (our state)
+  const std::shared_ptr<ov_msckf::State> _state;
 };
 
 } // namespace uvio
