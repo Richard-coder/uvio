@@ -107,3 +107,28 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
   are_initialized_anchors = true;
   PRINT_DEBUG("Anchors initialized.\n");
 }
+
+void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &message)
+{
+  //===================================================================================
+  // State propagation, and clone augmentation
+  //===================================================================================
+
+  // Propagate the state forward to the current update time
+  // [COMMENT] This will be modified
+  propagator->propagate_and_clone(state, message->timestamp);
+
+  // Return if we where unable to propagate
+  if(state->_timestamp != message->timestamp) {
+    printf(RED "[PROP]: Propagator unable to propagate the state forward in time!\n" RESET);
+    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET,message->timestamp-state->_timestamp);
+    return;
+  }
+
+  //===================================================================================
+  // EKF Update with UWB measurement
+  //===================================================================================
+
+  updaterUWB->update(state, message);
+
+}

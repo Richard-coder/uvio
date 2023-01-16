@@ -27,6 +27,10 @@
 #include "state/UVioState.h"
 #include "update/UpdaterUWB.h"
 
+#include "state/Propagator.h"
+/// [COMMENT] why do I need to include this (should be managed by VioManager.h
+/// where propahgator is defined
+
 namespace uvio {
 
 class UVioManager : public ov_msckf::VioManager {
