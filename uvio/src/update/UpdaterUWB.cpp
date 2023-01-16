@@ -18,7 +18,7 @@ void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<
 
   // Copy Reference on the meas structure dereferenciating the pointer
   for (const auto &it : state->_calib_GLOBALtoANCHORS) {
-    meas.anchors.insert({it.first, it.second.anchor()});
+    meas.anchors.insert({it.first, it.second->anchor()});
   }
 
   // Measurement noise for the uwb update
