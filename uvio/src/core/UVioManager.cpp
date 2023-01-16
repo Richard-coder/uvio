@@ -69,13 +69,8 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
 }
 
 void UVioManager::feed_measurement_uwb(const UwbData &message) {
-  //  // If we do not have VIO initialization or if we are on the ground, then return
-  //  // Note: UWB is poor on the ground, we do not use the measurement if the pose is
-  //  // within a 50cm radius ball from the initial pose
 
-  // TODO: there is no more _imu0
-//  double dist = Eigen::Vector3d(state->_imu->pos() - state->_imu0->pos()).norm();
-  if(!is_initialized_vio ||/* dist < 0.5 ||*/ !are_initialized_anchors) {
+  if(!(is_initialized_vio && are_initialized_anchors)) {
     return;
   }
 
@@ -115,8 +110,8 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
   //===================================================================================
 
   // Propagate the state forward to the current update time
-  // [COMMENT] This will be modified
-  propagator->propagate_and_clone(state, message->timestamp);
+  // [TODO] We need a propagate without cloning
+  // propagator->propagate(state, message->timestamp);
 
   // Return if we where unable to propagate
   if(state->_timestamp != message->timestamp) {
