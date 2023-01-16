@@ -34,7 +34,7 @@ void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<
   UVioUpdaterHelper::get_uwb_jacobian_full(state, meas, H_x, res, Hx_order);
 
   // Chi2 distance check
-  Eigen::MatrixXd P_marg = ov_msckf::StateHelper::get_marginal_covariance(std::static_pointer_cast<ov_msckf::State>(state), Hx_order);
+  Eigen::MatrixXd P_marg = ov_msckf::StateHelper::get_marginal_covariance(state->_state, Hx_order);
   Eigen::MatrixXd S = H_x*P_marg*H_x.transpose() + R; //Innovation matrix
   double chi2 = res.dot(S.llt().solve(res)); //r^T(S^-1)r
 
@@ -55,6 +55,6 @@ void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<
   }
 
   // Update the state
-  ov_msckf::StateHelper::EKFUpdate(std::static_pointer_cast<ov_msckf::State>(state), Hx_order, H_x, res, R);
+  ov_msckf::StateHelper::EKFUpdate(state->_state, Hx_order, H_x, res, R);
 
 }

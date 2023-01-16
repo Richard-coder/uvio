@@ -32,7 +32,7 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
   std::unordered_map<std::shared_ptr<ov_type::Type>,size_t> map_hx;
 
   // Add state clone
-  std::shared_ptr<ov_type::PoseJPL> clone_I = state->_imu->pose();
+  std::shared_ptr<ov_type::PoseJPL> clone_I = state->_state->_imu->pose();
   map_hx.insert({clone_I,total_hx});
   x_order.push_back(clone_I);
   total_hx += clone_I->size();

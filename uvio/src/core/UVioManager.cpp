@@ -25,9 +25,9 @@ using namespace uvio;
 
 UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::VioManager(params_), params(params_) {
 
-  // [COMMENT] VioManager (the parent class) initialize the state and holds a pointer to the state.
-  // The uvio state is defined as a pointer and it can be initialized calling the copy constructor of the base class
-  state = std::make_shared<UVioState>(*this->get_state(), params.uvio_state_options);
+  /// Initialize uvio state and propagator
+  state = std::make_shared<UVioState>(params.uvio_state_options, this->get_state());
+  propagator = std::make_shared<UVioPropagator>(params.imu_noises, params.gravity_mag);
 
   // [COMMENT] Tested it works so at this point uvio state has the "State" part already initialized and
   // the only thing to do is to initialize (set value and fej) of _calib_UWBtoIMU
@@ -37,7 +37,7 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     Eigen::Matrix3d H_L = Eigen::Matrix3d::Identity();
     Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * params.uvio_state_options.prior_uwb_imu_cov;
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
-    ov_msckf::StateHelper::initialize_invertible(state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
+    ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
   }
 
   // Our UWB sensor extrinsic transform
@@ -62,7 +62,7 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
   }
 
   // [TMP DEBUG] print covariance of claibration uwb-imu
-  std::cout << "UWB calibration covariance: " << ov_msckf::StateHelper::get_marginal_covariance(state, {state->_calib_UWBtoIMU}) << std::endl;
+  std::cout << "UWB calibration covariance: " << ov_msckf::StateHelper::get_marginal_covariance(state->_state, {state->_calib_UWBtoIMU}) << std::endl;
 
   // Make the updater!
   updaterUWB = std::make_unique<UpdaterUWB>(params.uwb_options);
@@ -95,7 +95,7 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
       Eigen::MatrixXd R = it.cov;
       Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
       ov_msckf::StateHelper::initialize_invertible(
-            state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
+            state->_state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
       PRINT_DEBUG("Added anchor[%d] to state.\n", it.id);
     }
   }
@@ -114,9 +114,9 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
   // propagator->propagate(state, message->timestamp);
 
   // Return if we where unable to propagate
-  if(state->_timestamp != message->timestamp) {
+  if(state->_state->_timestamp != message->timestamp) {
     printf(RED "[PROP]: Propagator unable to propagate the state forward in time!\n" RESET);
-    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET,message->timestamp-state->_timestamp);
+    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET,message->timestamp-state->_state->_timestamp);
     return;
   }
 

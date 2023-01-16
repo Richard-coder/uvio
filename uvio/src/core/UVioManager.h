@@ -27,7 +27,7 @@
 #include "state/UVioState.h"
 #include "update/UpdaterUWB.h"
 
-#include "state/Propagator.h"
+#include "state/UVioPropagator.h"
 /// [COMMENT] why do I need to include this (should be managed by VioManager.h
 /// where propahgator is defined
 
@@ -47,15 +47,19 @@ public:
    */
   void feed_measurement_uwb(const UwbData &message);
 
-  /// Accessor to get the current uvio state
-  inline std::shared_ptr<UVioState> get_uvio_state() { return state; }
+  /// Accessor to get the current propagator
+  std::shared_ptr<UVioPropagator> get_uvio_propagator() { return propagator; }
 
 private:
+
   /// Manager parameters
   UVioManagerOptions params;
 
-  /// UVIO state
+  ///
   std::shared_ptr<UVioState> state;
+
+  /// Propagator of our state
+  std::shared_ptr<UVioPropagator> propagator;
 
   /**
    * @brief This function will initialize UWB anchors into the state.
