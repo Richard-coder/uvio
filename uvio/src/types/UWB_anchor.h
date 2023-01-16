@@ -42,7 +42,7 @@ public:
     // Set UWB anchor id
     _anchor_id = anchor.id;
 
-    // Set fix
+    // Set flag (true if fixed, false if estimated online)
     _fixed = anchor.fix;
 
     // Create all the sub-variables
@@ -130,7 +130,7 @@ public:
   /// Anchor id type access
   inline size_t anchor_id() { return _anchor_id; }
 
-  /// Anchor id type access
+  /// Return false if anchor is estimated online, true if it is fixed
   inline bool fixed() { return _fixed; }
 
   /// Position type access
@@ -146,7 +146,9 @@ protected:
   /// UWB anchor id
   size_t _anchor_id;
 
-  /// Flag for fix anchor value
+  /// If true the anchor will not be added to state and the values
+  /// of position and biases will be fixed, if false the anchor will
+  /// be estimated online
   bool _fixed;
 
   /// Pose subvariable
