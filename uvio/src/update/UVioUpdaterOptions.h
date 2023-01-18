@@ -23,6 +23,8 @@
 #ifndef UVIO_UPDATER_OPTIONS_H
 #define UVIO_UPDATER_OPTIONS_H
 
+#include <memory>
+#include "utils/opencv_yaml_parse.h"
 #include "update/UpdaterOptions.h"
 
 namespace uvio {
@@ -36,9 +38,11 @@ struct UVioUpdaterOptions : public ov_msckf::UpdaterOptions {
   double uwb_sigma_range = 1;
 
   /// Nice print function of what parameters we have loaded
-  void print() {
-    ov_msckf::UpdaterOptions::print();
-    PRINT_DEBUG("    - uwb_sigma_range: %.2f\n", uwb_sigma_range);
+  void print_and_load(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
+    if (parser != nullptr) {
+      parser->parse_external("config_uwb", "tag0", "uwb_sigma_range", uwb_sigma_range);
+    }
+    PRINT_DEBUG("  - uwb_sigma_range: %.2f\n\n", uwb_sigma_range);
   }
 
 };
