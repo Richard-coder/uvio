@@ -1,4 +1,51 @@
 %YAML:1.0
 
-uwb0:
+tag0:
   rostopic: /uwb_driver_node/uwb
+  n_anchors: 4
+  perform_anchors_mapping: false
+  calib_uwb_extrinsics: true
+  calib_uwb_anchors_extrinsics: true
+  uwb_sigma_range: 1.5
+  prior_uwb_imu_cov: 0.3
+  uwb_calib_extrinsic: [0.15, 0.2, 0.02]
+
+anchor0:
+  id: 7435
+  fix: true
+  p_AinG: [-2.098, 3.903, 1.379]
+  const_bias: 0.1
+  dist_bias: 0.01
+  prior_p_AinG_cov: 0.05
+  prior_const_bias_cov: 0.001
+  prior_dist_bias_cov: 0.0001
+
+anchor1:
+  id: 19110
+  fix: true
+  p_AinG: [-0.817, 0.304, 0.152]
+  const_bias: 0.05
+  dist_bias: 0.0
+  prior_p_AinG_cov: 0.05
+  prior_const_bias_cov: 0.001
+  prior_dist_bias_cov: 0.0001
+
+anchor2:
+  id: 19333
+  fix: false
+  p_AinG: [0.372, 1.713, 0.006]
+  const_bias: 0.0
+  dist_bias: 0.007
+  prior_p_AinG_cov: 0.1
+  prior_const_bias_cov: 0.01
+  prior_dist_bias_cov: 0.0009
+
+anchor3:
+  id: 22660
+  fix: false
+  p_AinG: [1.175, -1.851, 0.023]
+  const_bias: 0.0
+  dist_bias: 0.001
+  prior_p_AinG_cov: 0.2
+  prior_const_bias_cov: 0.02
+  prior_dist_bias_cov: 0.0007

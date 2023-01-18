@@ -37,7 +37,7 @@ void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> 
   ov_msckf::ROS1Visualizer::setup_subscribers(parser);
   std::string topic_uwb;
   _nh->param<std::string>("topic_uwb", topic_uwb, "/uwb");
-  parser->parse_external("config_uwb", "uwb0", "rostopic", topic_uwb);
+  parser->parse_external("config_uwb", "tag0", "rostopic", topic_uwb);
   _sub_uwb = _nh->subscribe(topic_uwb, 10, &UVIOROS1Visualizer::callback_uwb, this);
   PRINT_DEBUG("subscribing to uwb: %s\n", topic_uwb.c_str());
 }

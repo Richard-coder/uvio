@@ -44,25 +44,10 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
   state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
   state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
 
-  // [TMP DEBUG] Vector of anchors
-  for (size_t i = 0; i < 4; i++) {
-    AnchorData tmp;
-    tmp.id = i + 110;
-    tmp.fix = (i < 2) ? true : false;
-    tmp.p_AinG = Eigen::Vector3d::Constant(i);
-    tmp.const_bias = i + 0.5;
-    tmp.dist_bias = i + 0.1;
-    tmp.cov = Eigen::MatrixXd::Identity(5, 5) * 0.017;
-    params.uwb_anchor_extrinsics.push_back(tmp);
-  }
-
   // Initialize anchors
-  if (!params.uwb_anchor_extrinsics.empty()) {
+  if (!params.do_anchors_mapping && !params.uwb_anchor_extrinsics.empty()) {
     initialize_uwb_anchors(params.uwb_anchor_extrinsics);
   }
-
-  // [TMP DEBUG] print covariance of claibration uwb-imu
-  std::cout << "UWB calibration covariance: " << ov_msckf::StateHelper::get_marginal_covariance(state->_state, {state->_calib_UWBtoIMU}) << std::endl;
 
   // Make the updater!
   updaterUWB = std::make_unique<UpdaterUWB>(params.uwb_options);
@@ -74,9 +59,12 @@ void UVioManager::feed_measurement_uwb(const UwbData &message) {
     return;
   }
 
-  // [DEBUG]
-  for (const auto &it : message.uwb_ranges) {
-    PRINT_DEBUG(GREEN "[UWB]: anchor[%d] range = %.3f m\n" RESET, it.first, it.second);
+  // Return if the uwb measurement is out of order otherwise feed our bar measuremnts
+  if(state->_state->_timestamp >= message.timestamp) {
+    PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET,(message.timestamp-state->_state->_timestamp));
+    return;
+  } else {
+    do_uwb_propagate_update(std::make_shared<UwbData>(message));
   }
 }
 
@@ -92,11 +80,17 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
       std::vector<std::shared_ptr<ov_type::Type>> H_order;
       Eigen::MatrixXd H_R = Eigen::MatrixXd::Zero(5, 5);
       Eigen::MatrixXd H_L = Eigen::MatrixXd::Identity(5, 5);
-      Eigen::MatrixXd R = it.cov;
+      Eigen::MatrixXd R = Eigen::MatrixXd::Identity(5, 5);
       Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
       ov_msckf::StateHelper::initialize_invertible(
             state->_state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
       PRINT_DEBUG("Added anchor[%d] to state.\n", it.id);
+      H_order.push_back(state->_calib_GLOBALtoANCHORS.at(it.id));
+      ov_msckf::StateHelper::set_initial_covariance(state->_state, it.cov, H_order);
+
+      // [TEMPORARY DEBUG] Print covariance to assure correct initialization
+      std::cout << "\nanchor[" << state->_calib_GLOBALtoANCHORS.at(it.id)->anchor_id() << "] set initial covariance:\n" <<
+                   ov_msckf::StateHelper::get_marginal_covariance(state->_state, H_order) << "\n" << std::endl;
     }
   }
   are_initialized_anchors = true;
@@ -110,8 +104,7 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
   //===================================================================================
 
   // Propagate the state forward to the current update time
-  // [TODO] We need a propagate without cloning
-  // propagator->propagate(state, message->timestamp);
+  propagator->propagate(state, message->timestamp);
 
   // Return if we where unable to propagate
   if(state->_state->_timestamp != message->timestamp) {
