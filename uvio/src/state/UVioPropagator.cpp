@@ -29,80 +29,73 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   // If the difference between the current update time and state is zero
   // We should crash, as this means we would have two clones at the same time!!!!
   if(state->_state->_timestamp == timestamp) {
-      printf(RED "Propagator::propagate_and_clone(): Propagation called again at same timestep at last update timestep!!!!\n" RESET);
-      std::exit(EXIT_FAILURE);
+    printf(RED "Propagator::propagate(): Propagation called again at same timestep at last update timestep!!!!\n" RESET);
+    std::exit(EXIT_FAILURE);
   }
 
   // We should crash if we are trying to propagate backwards
   if(state->_state->_timestamp > timestamp) {
-      printf(RED "Propagator::propagate_and_clone(): Propagation called trying to propagate backwards in time!!!!\n" RESET);
-      printf(RED "Propagator::propagate_and_clone(): desired propagation = %.4f\n" RESET, (timestamp-state->_state->_timestamp));
-      std::exit(EXIT_FAILURE);
+    printf(RED "Propagator::propagate(): Propagation called trying to propagate backwards in time!!!!\n" RESET);
+    printf(RED "Propagator::propagate(): desired propagation = %.4f\n" RESET, (timestamp-state->_state->_timestamp));
+    std::exit(EXIT_FAILURE);
   }
 
-    //===================================================================================
-    //===================================================================================
-    //===================================================================================
+  //===================================================================================
+  //===================================================================================
+  //===================================================================================
 
-    // Set the last time offset value if we have just started the system up
-    if(!have_last_prop_time_offset) {
-      last_prop_time_offset = state->_state->_calib_dt_CAMtoIMU->value()(0);
-      have_last_prop_time_offset = true;
+  // Set the last time offset value if we have just started the system up
+  if(!have_last_prop_time_offset) {
+    last_prop_time_offset = state->_state->_calib_dt_CAMtoIMU->value()(0);
+    have_last_prop_time_offset = true;
+  }
+
+  // Get what our IMU-camera offset should be (t_imu = t_cam + calib_dt)
+  double t_off_new = state->_state->_calib_dt_CAMtoIMU->value()(0);
+
+  // First lets construct an IMU vector of measurements we need
+  double time0 = state->_state->_timestamp+last_prop_time_offset;
+  double time1 = timestamp;
+  std::vector<ov_core::ImuData> prop_data = Propagator::select_imu_readings(imu_data,time0,time1);
+
+  // We are going to sum up all the state transition matrices, so we can do a single large multiplication at the end
+  // Phi_summed = Phi_i*Phi_summed
+  // Q_summed = Phi_i*Q_summed*Phi_i^T + Q_i
+  // After summing we can multiple the total phi to get the updated covariance
+  // We will then add the noise to the IMU portion of the state
+  Eigen::Matrix<double,15,15> Phi_summed = Eigen::Matrix<double,15,15>::Identity();
+  Eigen::Matrix<double,15,15> Qd_summed = Eigen::Matrix<double,15,15>::Zero();
+  double dt_summed = 0;
+
+  // Loop through all IMU messages, and use them to move the state forward in time
+  // This uses the zero'th order quat, and then constant acceleration discrete
+  if(prop_data.size() > 1) {
+    for(size_t i=0; i<prop_data.size()-1; i++) {
+
+      // Get the next state Jacobian and noise Jacobian for this IMU reading
+      Eigen::Matrix<double, 15, 15> F = Eigen::Matrix<double, 15, 15>::Zero();
+      Eigen::Matrix<double, 15, 15> Qdi = Eigen::Matrix<double, 15, 15>::Zero();
+      predict_and_compute(state->_state, prop_data.at(i), prop_data.at(i+1), F, Qdi);
+
+      // Next we should propagate our IMU covariance
+      // Pii' = F*Pii*F.transpose() + G*Q*G.transpose()
+      // Pci' = F*Pci and Pic' = Pic*F.transpose()
+      // NOTE: Here we are summing the state transition F so we can do a single mutiplication later
+      // NOTE: Phi_summed = Phi_i*Phi_summed
+      // NOTE: Q_summed = Phi_i*Q_summed*Phi_i^T + G*Q_i*G^T
+      Phi_summed = F * Phi_summed;
+      Qd_summed = F * Qd_summed * F.transpose() + Qdi;
+      Qd_summed = 0.5*(Qd_summed+Qd_summed.transpose());
+      dt_summed += prop_data.at(i+1).timestamp-prop_data.at(i).timestamp;
     }
+  }
 
-    // Get what our IMU-camera offset should be (t_imu = t_cam + calib_dt)
-    double t_off_new = state->_state->_calib_dt_CAMtoIMU->value()(0);
+  // Do the update to the covariance with our "summed" state transition and IMU noise addition...
+  std::vector<std::shared_ptr<ov_type::Type>> Phi_order;
+  Phi_order.push_back(state->_state->_imu);
+  ov_msckf::StateHelper::EKFPropagation(state->_state, Phi_order, Phi_order, Phi_summed, Qd_summed);
 
-    // First lets construct an IMU vector of measurements we need
-    double time0 = state->_state->_timestamp+last_prop_time_offset;
-    double time1 = timestamp+t_off_new;
-    std::vector<ov_core::ImuData> prop_data = Propagator::select_imu_readings(imu_data,time0,time1);
-
-    // We are going to sum up all the state transition matrices, so we can do a single large multiplication at the end
-    // Phi_summed = Phi_i*Phi_summed
-    // Q_summed = Phi_i*Q_summed*Phi_i^T + Q_i
-    // After summing we can multiple the total phi to get the updated covariance
-    // We will then add the noise to the IMU portion of the state
-    Eigen::Matrix<double,15,15> Phi_summed = Eigen::Matrix<double,15,15>::Identity();
-    Eigen::Matrix<double,15,15> Qd_summed = Eigen::Matrix<double,15,15>::Zero();
-    double dt_summed = 0;
-
-    // Loop through all IMU messages, and use them to move the state forward in time
-    // This uses the zero'th order quat, and then constant acceleration discrete
-    if(prop_data.size() > 1) {
-      for(size_t i=0; i<prop_data.size()-1; i++) {
-
-        // Get the next state Jacobian and noise Jacobian for this IMU reading
-        Eigen::Matrix<double, 15, 15> F = Eigen::Matrix<double, 15, 15>::Zero();
-        Eigen::Matrix<double, 15, 15> Qdi = Eigen::Matrix<double, 15, 15>::Zero();
-        predict_and_compute(state->_state, prop_data.at(i), prop_data.at(i+1), F, Qdi);
-
-        // Next we should propagate our IMU covariance
-        // Pii' = F*Pii*F.transpose() + G*Q*G.transpose()
-        // Pci' = F*Pci and Pic' = Pic*F.transpose()
-        // NOTE: Here we are summing the state transition F so we can do a single mutiplication later
-        // NOTE: Phi_summed = Phi_i*Phi_summed
-        // NOTE: Q_summed = Phi_i*Q_summed*Phi_i^T + G*Q_i*G^T
-        Phi_summed = F * Phi_summed;
-        Qd_summed = F * Qd_summed * F.transpose() + Qdi;
-        Qd_summed = 0.5*(Qd_summed+Qd_summed.transpose());
-        dt_summed += prop_data.at(i+1).timestamp-prop_data.at(i).timestamp;
-      }
-    }
-
-    // Last angular velocity (used for cloning when estimating time offset)
-    Eigen::Matrix<double,3,1> last_w = Eigen::Matrix<double,3,1>::Zero();
-    if(prop_data.size() > 1) last_w = prop_data.at(prop_data.size()-2).wm - state->_state->_imu->bias_g();
-    else if(!prop_data.empty()) last_w = prop_data.at(prop_data.size()-1).wm - state->_state->_imu->bias_g();
-
-    // Do the update to the covariance with our "summed" state transition and IMU noise addition...
-    std::vector<std::shared_ptr<ov_type::Type>> Phi_order;
-    Phi_order.push_back(state->_state->_imu);
-    ov_msckf::StateHelper::EKFPropagation(state->_state, Phi_order, Phi_order, Phi_summed, Qd_summed);
-
-    // Set timestamp data
-    state->_state->_timestamp = timestamp;
-    last_prop_time_offset = t_off_new;
+  // Set timestamp data
+  state->_state->_timestamp = timestamp;
+  last_prop_time_offset = t_off_new;
 }
-
-
