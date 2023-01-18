@@ -119,4 +119,13 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
 
   updaterUWB->update(state, message);
 
+  // Debug, print our current state
+  PRINT_INFO("calib_UWtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1), state->_calib_UWBtoIMU->value()(2));
+  for (const auto &it : state->_calib_GLOBALtoANCHORS) {
+    if (!it.second->fixed()) {
+      PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.first,
+                 it.second->p_AinG()->value()(0), it.second->p_AinG()->value()(1), it.second->p_AinG()->value()(2),
+                 it.second->const_bias()->value()(0), it.second->dist_bias()->value()(0));
+    }
+  }
 }
