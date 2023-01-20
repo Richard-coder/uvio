@@ -98,11 +98,10 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
     res(idx) = it_range.second - ((1 + anchor.dist_bias)*((anchor.p_AinG - (R_GtoI.transpose()*(-p_IinU) + p_IinG)).norm()) + anchor.const_bias);
 
     // DEBUG
-    PRINT_DEBUG(YELLOW "\nRange measurement from anchor %d = %lf\n" RESET, it_range.first, it_range.second);
+    PRINT_DEBUG(YELLOW "Range measurement from anchor %d = %lf\n" RESET, it_range.first, it_range.second);
     PRINT_DEBUG(YELLOW "Predicted measurement from anchor %d = %lf\n" RESET, it_range.first,
                 ((1 + anchor.dist_bias)*((anchor.p_AinG - (R_GtoI.transpose()*(-p_IinU) + p_IinG)).norm()) + anchor.const_bias));
-    PRINT_DEBUG(YELLOW "Residual for anchor %d = %lf\n" RESET, it_range.first,
-                ((1 + anchor.dist_bias)*((anchor.p_AinG - (R_GtoI.transpose()*(-p_IinU) + p_IinG)).norm()) + anchor.const_bias));
+    PRINT_DEBUG(YELLOW "Residual for anchor %d = %lf\n" RESET, it_range.first, res(idx));
 
     // Compute Jacobian blocks (keep the order of variables defined in state, rotation first then translation)
     H_n.noalias() = ((anchor.p_AinG - (R_GtoI.transpose()*(-p_IinU) + p_IinG)).transpose())/(anchor.p_AinG - (R_GtoI.transpose()*(-p_IinU) + p_IinG)).norm();
