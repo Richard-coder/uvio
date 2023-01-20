@@ -41,7 +41,8 @@ class UVioPropagator : public ov_msckf::Propagator {
 
 public:
 
-  using ov_msckf::Propagator::Propagator;
+  UVioPropagator(ov_msckf::NoiseManager noises, double gravity_mag, std::shared_ptr<ov_msckf::Propagator> propagator)
+    : ov_msckf::Propagator(noises, gravity_mag), propagator_(std::static_pointer_cast<UVioPropagator>(propagator)) {}
 
   ~UVioPropagator() {}
 
@@ -57,8 +58,11 @@ public:
    */
   void propagate(std::shared_ptr<UVioState> state, double timestamp);
 
+  /// Pointer to the (uvio)propagator (needed to access protected members)
+  const std::shared_ptr<UVioPropagator> propagator_;
+
 };
 
-}
+} // namespace uvio
 
 #endif // UVIO_STATE_PROPAGATOR_H
