@@ -84,7 +84,6 @@ void NodeletUVIO::onInit() {
   UVioManagerOptions params;
   params.print_and_load(parser);
   params.use_multi_threading_subs = true;
-  //  params.uvio_state_options.print_and_load(parser); // To uncomment, commented now for testing
   sys_ = std::make_shared<UVioManager>(params);
   viz_ = std::make_shared<UVIOROS1Visualizer>(private_nh_, sys_);
   viz_->setup_subscribers(parser);

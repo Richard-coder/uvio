@@ -41,9 +41,9 @@
 
 
     <!-- MASTER NODE! -->
-<!--    <node name="ov_msckf" pkg="ov_msckf" type="run_subscribe_msckf" output="screen" clear_params="true" required="false" launch-prefix="gdb -ex run &#45;&#45;args -->
-    <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false"> <!-- launch-prefix="$(arg launchprefix)" -->
+    <!-- <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false" launch-prefix="$(arg launchprefix)"> -->
 
+    <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false" if="$(arg enable_nodelet_manager)">
         <!-- master configuration object -->
         <param name="verbosity"              type="string" value="$(arg verbosity)" />
         <param name="config_path"            type="string" value="$(arg config_path)" />
@@ -55,7 +55,20 @@
         <!-- timing statistics recording -->
         <param name="record_timing_information"   type="bool"   value="$(arg dotime)" />
         <param name="record_timing_filepath"      type="string" value="$(arg path_time)" />
+    </node>
 
+    <node name="uvio" pkg="uvio" type="nodelet_uvio" output="screen" args="standalone" clear_params="true" required="false" launch-prefix="$(arg launchprefix)" unless="$(arg enable_nodelet_manager)">
+        <!-- master configuration object -->
+        <param name="verbosity"              type="string" value="$(arg verbosity)" />
+        <param name="config_path"            type="string" value="$(arg config_path)" />
+
+        <!-- world/filter parameters -->
+        <param name="use_stereo"             type="bool"   value="$(arg use_stereo)" />
+        <param name="max_cameras"            type="int"    value="$(arg max_cameras)" />
+
+        <!-- timing statistics recording -->
+        <param name="record_timing_information"   type="bool"   value="$(arg dotime)" />
+        <param name="record_timing_filepath"      type="string" value="$(arg path_time)" />
     </node>
 
     <!-- play the dataset -->
