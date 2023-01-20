@@ -47,9 +47,6 @@ public:
    */
   void feed_measurement_uwb(const UwbData &message);
 
-  /// Accessor to get the current propagator
-  std::shared_ptr<UVioPropagator> get_uvio_propagator() { return propagator; }
-
 private:
 
   /// Manager parameters

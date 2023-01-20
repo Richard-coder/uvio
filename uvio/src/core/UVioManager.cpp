@@ -27,17 +27,21 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
 
   /// Initialize uvio state and propagator
   state = std::make_shared<UVioState>(params.uvio_state_options, this->get_state());
-  propagator = std::make_shared<UVioPropagator>(params.imu_noises, params.gravity_mag);
+  propagator = std::make_shared<UVioPropagator>(params.imu_noises, params.gravity_mag, this->get_propagator());
 
-  // [COMMENT] Tested it works so at this point uvio state has the "State" part already initialized and
-  // the only thing to do is to initialize (set value and fej) of _calib_UWBtoIMU
-  if (params.uvio_state_options.do_calib_uwb_position) {
+  // Initialize p_UinI (calibration uwb-imu)
+  if (params.uvio_state_options.do_calib_uwb_position) {    
     std::vector<std::shared_ptr<ov_type::Type>> H_order;
-    Eigen::MatrixXd H_R = Eigen::Matrix3d::Zero();
+
+    // Need to fake it...
+    H_order.push_back(state->_state->_imu->q());
+
+    Eigen::Matrix3d H_R = Eigen::Matrix3d::Zero();
     Eigen::Matrix3d H_L = Eigen::Matrix3d::Identity();
     Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * params.uvio_state_options.prior_uwb_imu_cov;
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
     ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
+    PRINT_DEBUG("Calibration uwb-imu initialized.\n");
   }
 
   // Our UWB sensor extrinsic transform
@@ -55,13 +59,15 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
 
 void UVioManager::feed_measurement_uwb(const UwbData &message) {
 
-  if(!(is_initialized_vio && are_initialized_anchors)) {
+  // Check if vio is initialized, anchors are initialized and distace traveled is
+  // greater than 1 meter, else return
+  if(!(is_initialized_vio && are_initialized_anchors && distance > 0.5)) {
     return;
   }
 
   // Return if the uwb measurement is out of order otherwise feed our bar measuremnts
   if(state->_state->_timestamp >= message.timestamp) {
-    PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET,(message.timestamp-state->_state->_timestamp));
+    PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET, (message.timestamp-state->_state->_timestamp));
     return;
   } else {
     do_uwb_propagate_update(std::make_shared<UwbData>(message));
@@ -76,21 +82,26 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
 
     // Initialize state variable if option enabled and anchor not fixed
     if (params.uvio_state_options.do_calib_uwb_anchors && !it.fix) {
+
       // Initialize state variables
       std::vector<std::shared_ptr<ov_type::Type>> H_order;
-      Eigen::MatrixXd H_R = Eigen::MatrixXd::Zero(5, 5);
+
+      // Need to fake it...
+      H_order.push_back(state->_state->_imu->q());
+
+      Eigen::MatrixXd H_R = Eigen::MatrixXd::Zero(5, 3);
       Eigen::MatrixXd H_L = Eigen::MatrixXd::Identity(5, 5);
       Eigen::MatrixXd R = Eigen::MatrixXd::Identity(5, 5);
       Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
       ov_msckf::StateHelper::initialize_invertible(
             state->_state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
-      PRINT_DEBUG("Added anchor[%d] to state.\n", it.id);
+
+      H_order.clear();
       H_order.push_back(state->_calib_GLOBALtoANCHORS.at(it.id));
+
       ov_msckf::StateHelper::set_initial_covariance(state->_state, it.cov, H_order);
 
-      // [TEMPORARY DEBUG] Print covariance to assure correct initialization
-      std::cout << "\nanchor[" << state->_calib_GLOBALtoANCHORS.at(it.id)->anchor_id() << "] set initial covariance:\n" <<
-                   ov_msckf::StateHelper::get_marginal_covariance(state->_state, H_order) << "\n" << std::endl;
+      PRINT_DEBUG("Added anchor[%d] to state.\n", it.id);
     }
   }
   are_initialized_anchors = true;
@@ -99,10 +110,6 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
 
 void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &message)
 {
-  //===================================================================================
-  // State propagation, and clone augmentation
-  //===================================================================================
-
   // Propagate the state forward to the current update time
   propagator->propagate(state, message->timestamp);
 
@@ -113,19 +120,16 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
     return;
   }
 
-  //===================================================================================
   // EKF Update with UWB measurement
-  //===================================================================================
-
-  updaterUWB->update(state, message);
+  // updaterUWB->update(state, message);
 
   // Debug, print our current state
-  PRINT_INFO("calib_UWtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1), state->_calib_UWBtoIMU->value()(2));
+  PRINT_DEBUG("calib_UWtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1), state->_calib_UWBtoIMU->value()(2));
   for (const auto &it : state->_calib_GLOBALtoANCHORS) {
     if (!it.second->fixed()) {
-      PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.first,
-                 it.second->p_AinG()->value()(0), it.second->p_AinG()->value()(1), it.second->p_AinG()->value()(2),
-                 it.second->const_bias()->value()(0), it.second->dist_bias()->value()(0));
+      PRINT_DEBUG("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.first,
+                  it.second->p_AinG()->value()(0), it.second->p_AinG()->value()(1), it.second->p_AinG()->value()(2),
+                  it.second->const_bias()->value()(0), it.second->dist_bias()->value()(0));
     }
   }
 }
