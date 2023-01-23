@@ -24,6 +24,7 @@ include_directories(
         ${CERES_INCLUDE_DIRS}
         ${catkin_INCLUDE_DIRS}
         ${mdek_uwb_driver_INCLUDE_DIRS}
+        ${evb1000_INCLUDE_DIRS}
 )
 
 # Set link libraries used by all binaries
@@ -33,6 +34,7 @@ list(APPEND thirdparty_libraries
         ${CERES_LIBRARIES}
         ${catkin_LIBRARIES}
         ${mdek_uwb_driver_LIBRARIES}
+        ${evb1000_LIBRARIES}
 )
 
 ##################################################
@@ -77,6 +79,14 @@ if (catkin_FOUND AND ENABLE_ROS)
 
     install(FILES nodelet_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+    )
+
+    add_executable(uvio src/uvio.cpp)
+    target_link_libraries(uvio uvio_lib ${thirdparty_libraries})
+    install(TARGETS uvio
+            ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
 
 endif ()
