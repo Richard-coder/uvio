@@ -38,10 +38,31 @@ void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> 
   std::string topic_uwb;
   _nh->param<std::string>("topic_uwb", topic_uwb, "/uwb");
   parser->parse_external("config_uwb", "tag0", "rostopic", topic_uwb);
-  _sub_uwb = _nh->subscribe(topic_uwb, 10, &UVIOROS1Visualizer::callback_uwb, this);
+  _sub_uwb = _nh->subscribe(topic_uwb, 1, &UVIOROS1Visualizer::callback_uwb, this);
   PRINT_DEBUG("subscribing to uwb: %s\n", topic_uwb.c_str());
 }
 
+#if UWB_DRIVER == EVB_DRIVER
+void callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb) {
+
+  // Convert measurement to correct format
+  UwbData message;
+  message.timestamp = msg_uwb->header.stamp.toSec();
+
+  // Get the number of measurements
+  int n = msg_uwb->valid.size();
+
+  // Fill the map with only valid ranges
+  for(int i = 0; i < n; ++i) {
+    if (msg_uwb->valid[i]) {
+      message.uwb_ranges.insert({i, msg_uwb->distance[i]});
+    }
+  }
+
+  // send it to system
+  _app->feed_measurement_uwb(message);
+}
+#else
 void UVIOROS1Visualizer::callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uwb)
 {
   UwbData message;
@@ -66,5 +87,6 @@ void UVIOROS1Visualizer::callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uw
 
   // send it to system
   _app->feed_measurement_uwb(message);
-
 }
+#endif
+

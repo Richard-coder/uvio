@@ -61,7 +61,7 @@ void UVioManager::feed_measurement_uwb(const UwbData &message) {
 
   // Check if vio is initialized, anchors are initialized and distace traveled is
   // greater than 1 meter, else return
-  if(!(is_initialized_vio && are_initialized_anchors && distance > 0.5)) {
+  if(!(is_initialized_vio && are_initialized_anchors)) {
     return;
   }
 
@@ -69,9 +69,9 @@ void UVioManager::feed_measurement_uwb(const UwbData &message) {
   if(state->_state->_timestamp >= message.timestamp) {
     PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET, (message.timestamp-state->_state->_timestamp));
     return;
-  } else {
-    do_uwb_propagate_update(std::make_shared<UwbData>(message));
   }
+
+  do_uwb_propagate_update(std::make_shared<UwbData>(message));
 }
 
 void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
@@ -121,7 +121,7 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
   }
 
   // EKF Update with UWB measurement
-  // updaterUWB->update(state, message);
+  updaterUWB->update(state, message);
 
   // Debug, print our current state
   PRINT_DEBUG("calib_UWtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1), state->_calib_UWBtoIMU->value()(2));

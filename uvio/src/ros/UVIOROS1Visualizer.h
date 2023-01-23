@@ -22,7 +22,18 @@
 #ifndef UVIO_ROS1VISUALIZER_H
 #define UVIO_ROS1VISUALIZER_H
 
-#include <mdek_uwb_driver/Uwb.h>
+#define MDEK_DRIVER 1
+#define EVB_DRIVER 2
+
+#ifndef UWB_DRIVER
+  #define UWB_DRIVER MDEK_DRIVER
+#endif
+
+#if UWB_DRIVER == EVB_DRIVER
+  #include <evb1000_driver/TagDistance.h>
+#else
+  #include <mdek_uwb_driver/Uwb.h>
+#endif
 #include <ros/ROS1Visualizer.h>
 
 #include "core/UVioManager.h"
@@ -50,7 +61,11 @@ public:
   void setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser);
 
   /// Callback for uwb information
+#if UWB_DRIVER == EVB_DRIVER
+  void callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb);
+#else
   void callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uwb);
+#endif
 
 private:
 

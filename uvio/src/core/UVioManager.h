@@ -28,8 +28,6 @@
 #include "update/UpdaterUWB.h"
 
 #include "state/UVioPropagator.h"
-/// [COMMENT] why do I need to include this (should be managed by VioManager.h
-/// where propahgator is defined
 
 namespace uvio {
 
@@ -52,7 +50,7 @@ private:
   /// Manager parameters
   UVioManagerOptions params;
 
-  ///
+  /// Our UVioState (state->_state for State)
   std::shared_ptr<UVioState> state;
 
   /// Propagator of our state
