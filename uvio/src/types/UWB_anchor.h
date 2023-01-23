@@ -76,10 +76,13 @@ public:
   /**
    * @brief Update
    *
-   * @param dx Correction vector (position)
+   * @param dx Correction vector (position and bias)
    */
   inline void update(const Eigen::VectorXd &dx) override {
-    // Update
+
+    assert(dx.rows() == _size);
+
+    set_value(_value + dx);
   }
 
   /**
