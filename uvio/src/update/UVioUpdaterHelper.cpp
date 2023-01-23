@@ -29,6 +29,7 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
 
   // Compute the size of the states involved with this feature
   int total_hx = 0;
+  std::vector<size_t> state_anc_id;
   std::unordered_map<std::shared_ptr<ov_type::Type>,size_t> map_hx;
 
   // Add state clone
@@ -49,6 +50,7 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
     for (const auto &it : measurement.anchors) {
       std::shared_ptr<UWB_anchor> calibration_anc = state->_calib_GLOBALtoANCHORS.at(it.first);
       if(!calibration_anc->fixed()) {
+        state_anc_id.push_back(calibration_anc->anchor_id());
         map_hx.insert({calibration_anc,total_hx});
         x_order.push_back(calibration_anc);
         total_hx += calibration_anc->size();
@@ -69,7 +71,7 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
   Eigen::MatrixXd H_z_I = Eigen::MatrixXd::Zero(3,6);
   Eigen::MatrixXd H_I = Eigen::MatrixXd::Zero(measurement.uwbs.uwb_ranges.size(),6);
   Eigen::MatrixXd H_z_cal = Eigen::MatrixXd::Zero(measurement.uwbs.uwb_ranges.size(),3);
-  Eigen::MatrixXd H_z_anc = Eigen::MatrixXd::Zero(measurement.uwbs.uwb_ranges.size(),5);
+  Eigen::MatrixXd H_z_anc = Eigen::MatrixXd::Zero(measurement.uwbs.uwb_ranges.size(),5*state_anc_id.size());
   res = Eigen::VectorXd::Zero(measurement.uwbs.uwb_ranges.size());
 
   //=========================================================================
@@ -91,6 +93,7 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
     }
     catch (const std::out_of_range& oor) {
       PRINT_DEBUG(RED "[UWB Update] No anchor found for the given measurement ID %d" RESET, it_range.first);
+      continue;
     }
 
     // Compute the residual
@@ -115,15 +118,25 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
     }
 
     // Compute Jacobian wrt anchor (p_AinU, const_bias, dist_bias)
-    if(state->_options.do_calib_uwb_anchors && !anchor.fix) {
-      H_z_anc.block(idx,0,1,3).noalias() = (1 + anchor.dist_bias)*H_n*R_GtoI.transpose();
-      H_z_anc(idx,4) = 1;
-      H_z_anc(idx,5) = (anchor.p_AinG - (R_GtoI.transpose()*(-p_IinU) + p_IinG)).norm();
+    if(state->_options.do_calib_uwb_anchors) {
+      auto it = std::find(state_anc_id.begin(), state_anc_id.end(), anchor.id);
+      if (it != state_anc_id.end()) {
+          size_t i = std::distance(state_anc_id.begin(), it);
+          H_z_anc.block(idx, i*5, 1, 3).noalias() = (1 + anchor.dist_bias) * H_n * R_GtoI.transpose();
+          H_z_anc(idx, i*5 + 3) = 1;
+          H_z_anc(idx, i*5 + 4) = (anchor.p_AinG - (R_GtoI.transpose() * (-p_IinU) + p_IinG)).norm();
+      }
     }
 
     // Increment the counter
     ++idx;
   }
+
+  // [DEBUG]
+  std::cout << "\n\n\nH_x = \n" << H_x << "\n\n\n" << std::endl;
+  std::cout << "\n\n\nH_I = \n" << H_I << "\n\n\n" << std::endl;
+  std::cout << "\n\n\nH_z_cal = \n" << H_z_cal << "\n\n\n" << std::endl;
+  std::cout << "\n\n\nH_z_anc = \n" << H_z_anc << "\n\n\n" << std::endl;
 
   // CHAINRULE: get state Jacobian
   H_x.block(0,map_hx[clone_I],measurement.uwbs.uwb_ranges.size(),clone_I->size()).noalias() = H_I;
@@ -132,16 +145,17 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
     H_x.block(0,map_hx[calibration],measurement.uwbs.uwb_ranges.size(),calibration->size()).noalias() = H_z_cal;
   }
 
-  idx = 0;
   if (state->_options.do_calib_uwb_anchors) {
-    for (const auto &it : measurement.anchors) {
-      std::shared_ptr<UWB_anchor> calibration_anc = state->_calib_GLOBALtoANCHORS.at(it.first);
-      if(!calibration_anc->fixed()) {
-        H_x.block(0,map_hx[calibration_anc],measurement.uwbs.uwb_ranges.size(),calibration_anc->size()).noalias() = H_z_anc.row(idx);
-        ++idx;
+    for (const auto &it : state->_calib_GLOBALtoANCHORS) {
+      if(!it.second->fixed()) {
+        auto index = std::find(state_anc_id.begin(), state_anc_id.end(), it.second->anchor_id());
+        size_t i = std::distance(state_anc_id.begin(), index);
+        H_x.block(0,map_hx[it.second],measurement.uwbs.uwb_ranges.size(),it.second->size()).noalias() = H_z_anc.block(0, i*5, 4, 5);
       }
     }
   }
+
+  std::cout << "\n\n\nfinal H_x = \n" << H_x << "\n\n\n" << std::endl;
 }
 
 

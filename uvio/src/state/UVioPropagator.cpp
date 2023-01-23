@@ -29,25 +29,16 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   // If the difference between the current update time and state is zero
   // We should crash, as this means we would have two clones at the same time!!!!
   if (state->_state->_timestamp == timestamp) {
-    PRINT_ERROR(RED "Propagator::propagate_and_clone(): Propagation called again at same timestep at last update timestep!!!!\n" RESET);
+    PRINT_ERROR(RED "UVioPropagator::propagate(): Propagation called again at same timestep at last update timestep!!!!\n" RESET);
     std::exit(EXIT_FAILURE);
   }
 
   // We should crash if we are trying to propagate backwards
   if (state->_state->_timestamp > timestamp) {
-    PRINT_ERROR(RED "Propagator::propagate_and_clone(): Propagation called trying to propagate backwards in time!!!!\n" RESET);
-    PRINT_ERROR(RED "Propagator::propagate_and_clone(): desired propagation = %.4f\n" RESET, (timestamp - state->_state->_timestamp));
+    PRINT_ERROR(RED "UVioPropagator::propagate(): Propagation called trying to propagate backwards in time!!!!\n" RESET);
+    PRINT_ERROR(RED "UVioPropagator::propagate(): desired propagation = %.4f\n" RESET, (timestamp - state->_state->_timestamp));
     std::exit(EXIT_FAILURE);
   }
-
-  // Set the last time offset value if we have just started the system up
-  if (!propagator_->have_last_prop_time_offset) {
-    propagator_->last_prop_time_offset = state->_state->_calib_dt_CAMtoIMU->value()(0);
-    propagator_->have_last_prop_time_offset = true;
-  }
-
-  // Get what our IMU-camera offset should be (t_imu = t_cam + calib_dt)
-  double t_off_new = state->_state->_calib_dt_CAMtoIMU->value()(0);
 
   // First lets construct an IMU vector of measurements we need
   double time0 = state->_state->_timestamp + propagator_->last_prop_time_offset;
@@ -59,14 +50,11 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   }
 
   /// [DEBUG]
-  double timestamp_imu0 = prop_data.end()->timestamp;
-  double timestamp_imu1 = prop_data.begin()->timestamp;
-  PRINT_DEBUG(RED "prop_data.size() = %d\n\n" RESET, prop_data.size());
-  PRINT_DEBUG(RED "uwb timestamp = %f\n\n" RESET, timestamp);
-  PRINT_DEBUG(RED "imu timestamp 0 = %f\n\n" RESET, timestamp_imu0);
-  PRINT_DEBUG(RED "imu timestamp 1 = %f\n\n" RESET, timestamp_imu1);
-  PRINT_DEBUG(RED "difference 0 = %f\n\n" RESET, (std::abs(timestamp-timestamp_imu0)));
-  PRINT_DEBUG(RED "difference 1 = %f\n\n" RESET, (std::abs(timestamp-timestamp_imu1)));
+  PRINT_DEBUG(RED "[PROPAGATE] uwb_timestamp = %f\n\n" RESET, timestamp);
+  PRINT_DEBUG(RED "[PROPAGATE] time0 = %f\n\n" RESET, time0);
+  PRINT_DEBUG(RED "[PROPAGATE] time1 = %f\n\n" RESET, time1);
+  PRINT_DEBUG(RED "[PROPAGATE] propagation buffer first timestamp = %f\n\n" RESET, prop_data.front().timestamp);
+  PRINT_DEBUG(RED "[PROPAGATE] propagation buffer last timestamp = %f\n\n" RESET, prop_data.back().timestamp);
 
   // We are going to sum up all the state transition matrices, so we can do a single large multiplication at the end
   // Phi_summed = Phi_i*Phi_summed
@@ -101,12 +89,11 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   }
 
   /// [DEBUG]
-  PRINT_DEBUG(RED "time0 = %f\n\n" RESET, time0);
-  PRINT_DEBUG(RED "time1 = %f\n\n" RESET, time1);
-  PRINT_DEBUG(RED "dt_summed = %f\n\n" RESET, dt_summed);
-  PRINT_DEBUG(RED "time1 - time0 = %f\n\n" RESET, (time1 - time0));
-  PRINT_DEBUG(RED "std::abs((time1 - time0) - dt_summed) = %f\n\n" RESET, std::abs((time1 - time0) - dt_summed));
+  PRINT_DEBUG(RED "[PROPAGATE] time1 - time0 = %f\n\n" RESET, (time1 - time0));
+  PRINT_DEBUG(RED "[PROPAGATE] dt_summed = %f\n\n" RESET, dt_summed);
+  PRINT_DEBUG(RED "[PROPAGATE] std::abs((time1 - time0) - dt_summed) = %f\n\n" RESET, std::abs((time1 - time0) - dt_summed));
 
+  /// DEBUG
   assert(std::abs((time1 - time0) - dt_summed) < 1e-4);
 
   // Last angular velocity (used for cloning when estimating time offset)
@@ -122,6 +109,5 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   ov_msckf::StateHelper::EKFPropagation(state->_state, Phi_order, Phi_order, Phi_summed, Qd_summed);
 
   // Set timestamp data
-  state->_state->_timestamp = timestamp - t_off_new;
-  propagator_->last_prop_time_offset = t_off_new;
+  state->_state->_timestamp = timestamp;  // t_state = t_cam = t_imu - calib_dt (?)
 }
