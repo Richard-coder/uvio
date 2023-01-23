@@ -49,8 +49,8 @@ struct UVioStateOptions {
       parser->parse_external("config_uwb", "tag0", "calib_uwb_anchors_extrinsics", do_calib_uwb_anchors);
       parser->parse_external("config_uwb", "tag0", "prior_uwb_imu_cov", prior_uwb_imu_cov);
     }
-    PRINT_DEBUG("    - calib_uwb_extrinsics: %s\n", do_calib_uwb_position ? "ture" : "false");
-    PRINT_DEBUG("    - calib_uwb_anchors: %s\n", do_calib_uwb_anchors ? "ture" : "false");
+    PRINT_DEBUG("    - calib_uwb_extrinsics: %s\n", do_calib_uwb_position ? "true" : "false");
+    PRINT_DEBUG("    - calib_uwb_anchors: %s\n", do_calib_uwb_anchors ? "true" : "false");
     PRINT_DEBUG("    - prior_uwb_imu_cov: %.4f\n", prior_uwb_imu_cov);
   }
 };
