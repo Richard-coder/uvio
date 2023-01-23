@@ -3,15 +3,15 @@
 
     <!-- what config we are going to run (should match folder name) -->
     <arg name="verbosity"   default="DEBUG" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
-    <arg name="config"      default="euroc_mav" /> <!-- euroc_mav, tum_vi, rpng_aruco -->
-    <arg name="config_path" default="$(find uvio)/../config/$(arg config)/estimator_config.yaml" />
+    <arg name="config"      default="r15" /> <!-- euroc_mav, tum_vi, rpng_aruco -->
+    <arg name="config_path" default="$(find uvio)/config/$(arg config)/estimator_config.yaml" />
 
     <!-- mono or stereo and what ros bag to play -->
-    <arg name="max_cameras" default="2" />
-    <arg name="use_stereo"  default="true" />
+    <arg name="max_cameras" default="1" />
+    <arg name="use_stereo"  default="false" />
     <arg name="bag_start"   default="0" /> <!-- v1-2: 0, mh1: 40, mh2: 35, mh3: 17.5, mh4-5: 15 -->
     <arg name="bag_rate"    default="1" />
-    <arg name="dataset"     default="V1_01_easy" /> <!-- V1_01_easy, V1_02_medium, V2_02_medium -->
+    <arg name="dataset"     default="r15" /> <!-- V1_01_easy, V1_02_medium, V2_02_medium -->
     <arg name="dobag"       default="false" /> <!-- if we should play back the bag -->
     <arg name="bag"         default="/media/patrick/RPNG\ FLASH\ 3/$(arg config)/$(arg dataset).bag" />
 <!--    <arg name="bag"         default="/home/patrick/datasets/$(arg config)/$(arg dataset).bag" />-->
@@ -28,22 +28,20 @@
     <arg name="path_gt"     default="$(find ov_data)/$(arg config)/$(arg dataset).txt" />
 
     <!-- Nodelet -->
+    <arg name="use_nodelet"             default="true"/>
     <arg name="enable_nodelet_manager"  default="true"/>
     <arg name="nodelet_manager_name"    default="nodelet_manager"/>
-
-    <!-- Nodelet manager -->
-    <group if="$(arg enable_nodelet_manager)">
-        <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager_name)" args="manager" output="screen"/>
-    </group>
 
     <!-- Debug server -->
     <arg name="launchprefix"        default="gdbserver localhost:10000"/>
 
+    <!-- Nodelet manager -->
+    <group if="$(arg enable_nodelet_manager)">
+        <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager_name)" args="manager" output="screen" if="$(arg use_nodelet)"/>
+    </group>
 
     <!-- MASTER NODE! -->
-    <!-- <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false" launch-prefix="$(arg launchprefix)"> -->
-
-    <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false" if="$(arg enable_nodelet_manager)">
+    <node name="uvio" pkg="nodelet" type="nodelet" output="screen" args="load uvio/nodelet_uvio $(arg nodelet_manager_name)" clear_params="true" required="false" if="$(arg use_nodelet)">
         <!-- master configuration object -->
         <param name="verbosity"              type="string" value="$(arg verbosity)" />
         <param name="config_path"            type="string" value="$(arg config_path)" />
@@ -57,7 +55,7 @@
         <param name="record_timing_filepath"      type="string" value="$(arg path_time)" />
     </node>
 
-    <node name="uvio" pkg="uvio" type="nodelet_uvio" output="screen" args="standalone" clear_params="true" required="false" launch-prefix="$(arg launchprefix)" unless="$(arg enable_nodelet_manager)">
+    <node name="uvio" pkg="uvio" type="uvio" output="screen" clear_params="true" required="false" launch-prefix="$(arg launchprefix)" unless="$(arg use_nodelet)">
         <!-- master configuration object -->
         <param name="verbosity"              type="string" value="$(arg verbosity)" />
         <param name="config_path"            type="string" value="$(arg config_path)" />
