@@ -44,18 +44,6 @@ class UVioUpdaterHelper : public ov_msckf::UpdaterHelper {
 public:
 
   /**
-   * @brief position object that our UpdaterHelper leverages,
-   */
-  struct UpdaterHelperUWB {
-
-    // UWB measurements
-    UwbData uwbs;
-
-    // Anchors
-    std::unordered_map<size_t, AnchorData> anchors;
-  };
-
-  /**
    * @brief Will construct the "stacked" Jacobians for uwb measurements
    *
    * @param[in] state State of the filter system
@@ -64,7 +52,7 @@ public:
    * @param[out] res Measurement residual for this feature
    * @param[out] x_order Extra variables our extra Jacobian has
    */
-  static void get_uwb_jacobian_full(std::shared_ptr<UVioState> state, UpdaterHelperUWB &measurement, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<std::shared_ptr<ov_type::Type>> &x_order);
+  static void get_uwb_jacobian_full(std::shared_ptr<UVioState> state, std::shared_ptr<UwbData> measurement, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<std::shared_ptr<ov_type::Type>> &x_order);
 
 };
 

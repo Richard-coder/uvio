@@ -12,15 +12,6 @@ using namespace uvio;
 
 void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<UwbData>& message) {
 
-  // Convert uwb measurement into our current format keeping only valid measuremetns
-  UVioUpdaterHelper::UpdaterHelperUWB meas;
-  meas.uwbs = *message;
-
-  // Copy Reference on the meas structure dereferenciating the pointer
-  for (const auto &it : state->_calib_GLOBALtoANCHORS) {
-    meas.anchors.insert({it.first, it.second->anchor()});
-  }
-
   // Measurement noise for the uwb update
   // Alessandro: fixed value
   Eigen::MatrixXd R = pow(_options.uwb_sigma_range,2)*Eigen::MatrixXd::Identity(message->uwb_ranges.size(),message->uwb_ranges.size());
@@ -31,7 +22,7 @@ void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<
   std::vector<std::shared_ptr<ov_type::Type>> Hx_order;
 
   // Get the Jacobian for the uwb update
-  UVioUpdaterHelper::get_uwb_jacobian_full(state, meas, H_x, res, Hx_order);
+  UVioUpdaterHelper::get_uwb_jacobian_full(state, message, H_x, res, Hx_order);
 
   // Chi2 distance check
   Eigen::MatrixXd P_marg = ov_msckf::StateHelper::get_marginal_covariance(state->_state, Hx_order);
@@ -42,10 +33,9 @@ void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<
   double chi2_check = _chi_squared_table[res.rows()];
 
   // Check if we should update or not
-  // Alessandro: [check] CHI2 test
-  if(chi2 > _options.chi2_multipler*chi2_check) {
-//      std::cout << "UWB update chi2 = " << chi2 << " > " << _options_uwb.chi2_multipler*chi2_check << std::endl;
-      return;
+  if(chi2 > _options.uwb_chi2_multipler*chi2_check) {
+    PRINT_DEBUG("UWB chi2 = %f > %f\n", chi2, _options.chi2_multipler*chi2_check);
+    return;
   }
 
   // We are good! Perform measurement compression

@@ -49,13 +49,6 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
     prop_data = propagator_->select_imu_readings(propagator_->imu_data, time0, time1);
   }
 
-  /// [DEBUG]
-  PRINT_DEBUG(RED "[PROPAGATE] uwb_timestamp = %f\n\n" RESET, timestamp);
-  PRINT_DEBUG(RED "[PROPAGATE] time0 = %f\n\n" RESET, time0);
-  PRINT_DEBUG(RED "[PROPAGATE] time1 = %f\n\n" RESET, time1);
-  PRINT_DEBUG(RED "[PROPAGATE] propagation buffer first timestamp = %f\n\n" RESET, prop_data.front().timestamp);
-  PRINT_DEBUG(RED "[PROPAGATE] propagation buffer last timestamp = %f\n\n" RESET, prop_data.back().timestamp);
-
   // We are going to sum up all the state transition matrices, so we can do a single large multiplication at the end
   // Phi_summed = Phi_i*Phi_summed
   // Q_summed = Phi_i*Q_summed*Phi_i^T + Q_i
@@ -87,14 +80,7 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
       dt_summed += prop_data.at(i + 1).timestamp - prop_data.at(i).timestamp;
     }
   }
-
-  /// [DEBUG]
-  PRINT_DEBUG(RED "[PROPAGATE] time1 - time0 = %f\n\n" RESET, (time1 - time0));
-  PRINT_DEBUG(RED "[PROPAGATE] dt_summed = %f\n\n" RESET, dt_summed);
-  PRINT_DEBUG(RED "[PROPAGATE] std::abs((time1 - time0) - dt_summed) = %f\n\n" RESET, std::abs((time1 - time0) - dt_summed));
-
-  /// DEBUG
-  //  assert(std::abs((time1 - time0) - dt_summed) < 1e-4);
+  assert(std::abs((time1 - time0) - dt_summed) < 1e-4);
 
   // Last angular velocity (used for cloning when estimating time offset)
   Eigen::Matrix<double, 3, 1> last_w = Eigen::Matrix<double, 3, 1>::Zero();
