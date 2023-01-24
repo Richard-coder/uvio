@@ -3,12 +3,11 @@
 tag0:
   rostopic: /mus/uwb
   n_anchors: 4
-  perform_anchors_mapping: false
   calib_uwb_extrinsics: true
-  calib_uwb_anchors: true
-  uwb_sigma_range: 0.15
+  uwb_chi2_multipler: 1.0
+  uwb_sigma_range: 0.3
   prior_uwb_imu_cov: 0.1
-  uwb_calib_extrinsic: [0.15, 0.2, 0.02]
+  uwb_calib_extrinsic: [0.0, 0.0, 0.0]
 
 anchor0:
   id: 0
@@ -17,35 +16,35 @@ anchor0:
   const_bias: 0.1
   dist_bias: 0.3
   prior_p_AinG_cov: 0.05
-  prior_const_bias_cov: 0.001
-  prior_dist_bias_cov: 0.0001
+  prior_const_bias_cov: 0.01
+  prior_dist_bias_cov: 0.01
 
 anchor1:
   id: 1
-  fix: true
+  fix: false
   p_AinG: [3.0, 3.0, 0.0]
   const_bias: 0.1
   dist_bias: 0.3
   prior_p_AinG_cov: 0.05
-  prior_const_bias_cov: 0.001
-  prior_dist_bias_cov: 0.0001
+  prior_const_bias_cov: 0.01
+  prior_dist_bias_cov: 0.01
 
 anchor2:
   id: 2
   fix: false
-  p_AinG: [12.4, 7.15, 1.12]
+  p_AinG: [12.3, 7, 1.1]
   const_bias: 0.1
   dist_bias: 0.3
-  prior_p_AinG_cov: 0.1
+  prior_p_AinG_cov: 0.05
   prior_const_bias_cov: 0.01
-  prior_dist_bias_cov: 0.0009
+  prior_dist_bias_cov: 0.01
 
 anchor3:
   id: 3
   fix: false
-  p_AinG: [5.01, 9.43, 0.18]
+  p_AinG: [5.0, 9.4, 0.2]
   const_bias: 0.1
   dist_bias: 0.3
-  prior_p_AinG_cov: 0.2
-  prior_const_bias_cov: 0.02
-  prior_dist_bias_cov: 0.0007
+  prior_p_AinG_cov: 0.05
+  prior_const_bias_cov: 0.01
+  prior_dist_bias_cov: 0.01

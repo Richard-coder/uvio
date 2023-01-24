@@ -3,9 +3,8 @@
 tag0:
   rostopic: /uwb_driver_node/uwb
   n_anchors: 4
-  perform_anchors_mapping: false
   calib_uwb_extrinsics: true
-  calib_uwb_anchors: true
+  uwb_chi2_multipler: 2.0
   uwb_sigma_range: 0.15
   prior_uwb_imu_cov: 0.3
   uwb_calib_extrinsic: [0.15, 0.2, 0.02]
@@ -32,7 +31,7 @@ anchor1:
 
 anchor2:
   id: 19333
-  fix: false
+  fix: true
   p_AinG: [0.372, 1.713, 0.006]
   const_bias: 0.0
   dist_bias: 0.007
@@ -42,7 +41,7 @@ anchor2:
 
 anchor3:
   id: 22660
-  fix: false
+  fix: true
   p_AinG: [1.175, -1.851, 0.023]
   const_bias: 0.0
   dist_bias: 0.001

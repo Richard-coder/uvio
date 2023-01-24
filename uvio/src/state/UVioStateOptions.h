@@ -33,10 +33,7 @@ namespace uvio {
 struct UVioStateOptions {
 
   /// Bool to determine whether or not to calibrate imu-to-uwb module position
-  bool do_calib_uwb_position = false;
-
-  /// Bool to determine whether or not to calibrate uwb anchors global position
-  bool do_calib_uwb_anchors = false;
+  bool do_calib_uwb_extrinsics = false;
 
   /// Prior covariances
   double prior_uwb_imu_cov = 0.1;
@@ -45,12 +42,10 @@ struct UVioStateOptions {
   void print_and_load(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
 
     if (parser != nullptr) {
-      parser->parse_external("config_uwb", "tag0", "calib_uwb_extrinsics", do_calib_uwb_position);
-      parser->parse_external("config_uwb", "tag0", "calib_uwb_anchors", do_calib_uwb_anchors);
+      parser->parse_external("config_uwb", "tag0", "calib_uwb_extrinsics", do_calib_uwb_extrinsics);
       parser->parse_external("config_uwb", "tag0", "prior_uwb_imu_cov", prior_uwb_imu_cov);
     }
-    PRINT_DEBUG("    - calib_uwb_extrinsics: %s\n", do_calib_uwb_position ? "true" : "false");
-    PRINT_DEBUG("    - calib_uwb_anchors: %s\n", do_calib_uwb_anchors ? "true" : "false");
+    PRINT_DEBUG("    - calib_uwb_extrinsics: %s\n", do_calib_uwb_extrinsics ? "true" : "false");
     PRINT_DEBUG("    - prior_uwb_imu_cov: %.4f\n", prior_uwb_imu_cov);
   }
 };
