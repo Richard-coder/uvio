@@ -5,7 +5,7 @@ tag0:
   n_anchors: 4
   perform_anchors_mapping: false
   calib_uwb_extrinsics: true
-  calib_uwb_anchors_extrinsics: true
+  calib_uwb_anchors: true
   uwb_sigma_range: 0.15
   prior_uwb_imu_cov: 0.3
   uwb_calib_extrinsic: [0.15, 0.2, 0.02]

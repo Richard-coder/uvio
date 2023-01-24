@@ -46,7 +46,7 @@ struct UVioStateOptions {
 
     if (parser != nullptr) {
       parser->parse_external("config_uwb", "tag0", "calib_uwb_extrinsics", do_calib_uwb_position);
-      parser->parse_external("config_uwb", "tag0", "calib_uwb_anchors_extrinsics", do_calib_uwb_anchors);
+      parser->parse_external("config_uwb", "tag0", "calib_uwb_anchors", do_calib_uwb_anchors);
       parser->parse_external("config_uwb", "tag0", "prior_uwb_imu_cov", prior_uwb_imu_cov);
     }
     PRINT_DEBUG("    - calib_uwb_extrinsics: %s\n", do_calib_uwb_position ? "true" : "false");
