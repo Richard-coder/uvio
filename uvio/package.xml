@@ -33,6 +33,7 @@
     <depend condition="$ROS_VERSION == 1">ov_msckf</depend>
     <depend condition="$ROS_VERSION == 1">nodelet</depend>
     <depend condition="$ROS_VERSION == 1">mdek_uwb_driver</depend>
+    <depend condition="$ROS_VERSION == 1">evb1000_driver</depend>
 
     <!-- System dependencies for both versions -->
     <depend>eigen</depend>
@@ -40,8 +41,6 @@
     <depend>libopencv-contrib-dev</depend>
     <depend>boost</depend>
     <depend>libceres-dev</depend>
-    <depend>mdek_uwb_driver</depend>
-    <depend>nodelet</depend>
 
     <!-- Note the export is required to expose the executables -->
     <export>

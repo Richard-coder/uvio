@@ -26,33 +26,31 @@
 #define EVB_DRIVER 2
 
 #ifndef UWB_DRIVER
-  #define UWB_DRIVER MDEK_DRIVER
+#define UWB_DRIVER EVB_DRIVER
 #endif
 
 #if UWB_DRIVER == EVB_DRIVER
-  #include <evb1000_driver/TagDistance.h>
+#include <evb1000_driver/TagDistance.h>
 #else
-  #include <mdek_uwb_driver/Uwb.h>
+#include <mdek_uwb_driver/Uwb.h>
 #endif
 #include <ros/ROS1Visualizer.h>
 
 #include "core/UVioManager.h"
 
-namespace uvio
-{
+namespace uvio {
 
-class UVIOROS1Visualizer : public ov_msckf::ROS1Visualizer
-{
+class UVIOROS1Visualizer : public ov_msckf::ROS1Visualizer {
 
 public:
-
   /**
    * @brief Default constructor
    * @param nh ROS node handler
    * @param app Core estimator manager
    * @param sim Simulator if we are simulating
    */
-  UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app, std::shared_ptr<ov_msckf::Simulator> sim = nullptr);
+  UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app,
+                     std::shared_ptr<ov_msckf::Simulator> sim = nullptr);
 
   /**
    * @brief Wrapper to ov_msckf::ROS!Visualizer::setup_subscribers. Will setup ROS subscribers and callbacks
@@ -68,13 +66,11 @@ public:
 #endif
 
 private:
-
   /// UWB subscriber
   ros::Subscriber _sub_uwb;
 
   /// Core application of the filter system
   std::shared_ptr<UVioManager> _app;
-
 };
 
 } // namespace uvio

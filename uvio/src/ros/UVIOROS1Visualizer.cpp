@@ -21,20 +21,18 @@
 
 #include <ros/UVIOROS1Visualizer.h>
 #include <utils/opencv_yaml_parse.h>
-#include <utils/uvio_sensor_data.h>
 #include <utils/utils.h>
+#include <utils/uvio_sensor_data.h>
 
 using namespace uvio;
 
-UVIOROS1Visualizer::UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app, std::shared_ptr<ov_msckf::Simulator> sim)
-  : ov_msckf::ROS1Visualizer(nh, std::static_pointer_cast<ov_msckf::VioManager>(app), sim), _app(app)
-{
+UVIOROS1Visualizer::UVIOROS1Visualizer(std::shared_ptr<ros::NodeHandle> nh, std::shared_ptr<UVioManager> app,
+                                       std::shared_ptr<ov_msckf::Simulator> sim)
+    : ov_msckf::ROS1Visualizer(nh, std::static_pointer_cast<ov_msckf::VioManager>(app), sim), _app(app) {}
 
-}
-
-void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser)
-{
+void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser) {
   ov_msckf::ROS1Visualizer::setup_subscribers(parser);
+
   std::string topic_uwb;
   _nh->param<std::string>("topic_uwb", topic_uwb, "/uwb");
   parser->parse_external("config_uwb", "tag0", "rostopic", topic_uwb);
@@ -43,7 +41,7 @@ void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> 
 }
 
 #if UWB_DRIVER == EVB_DRIVER
-void callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb) {
+void UVIOROS1Visualizer::callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb) {
 
   // Convert measurement to correct format
   UwbData message;
@@ -53,7 +51,7 @@ void callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb) {
   int n = msg_uwb->valid.size();
 
   // Fill the map with only valid ranges
-  for(int i = 0; i < n; ++i) {
+  for (int i = 0; i < n; ++i) {
     if (msg_uwb->valid[i]) {
       message.uwb_ranges.insert({i, msg_uwb->distance[i]});
     }
@@ -63,8 +61,7 @@ void callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb) {
   _app->feed_measurement_uwb(message);
 }
 #else
-void UVIOROS1Visualizer::callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uwb)
-{
+void UVIOROS1Visualizer::callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uwb) {
   UwbData message;
   message.timestamp = msg_uwb->header.stamp.toSec();
 
@@ -89,4 +86,3 @@ void UVIOROS1Visualizer::callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uw
   _app->feed_measurement_uwb(message);
 }
 #endif
-

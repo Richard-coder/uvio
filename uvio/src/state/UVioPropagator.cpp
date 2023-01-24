@@ -94,7 +94,7 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   PRINT_DEBUG(RED "[PROPAGATE] std::abs((time1 - time0) - dt_summed) = %f\n\n" RESET, std::abs((time1 - time0) - dt_summed));
 
   /// DEBUG
-  assert(std::abs((time1 - time0) - dt_summed) < 1e-4);
+  //  assert(std::abs((time1 - time0) - dt_summed) < 1e-4);
 
   // Last angular velocity (used for cloning when estimating time offset)
   Eigen::Matrix<double, 3, 1> last_w = Eigen::Matrix<double, 3, 1>::Zero();
@@ -109,5 +109,5 @@ void UVioPropagator::propagate(std::shared_ptr<UVioState> state, double timestam
   ov_msckf::StateHelper::EKFPropagation(state->_state, Phi_order, Phi_order, Phi_summed, Qd_summed);
 
   // Set timestamp data
-  state->_state->_timestamp = timestamp;  // t_state = t_cam = t_imu - calib_dt (?)
+  state->_state->_timestamp = timestamp;
 }

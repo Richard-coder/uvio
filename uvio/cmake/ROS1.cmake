@@ -2,14 +2,17 @@ cmake_minimum_required(VERSION 3.3)
 
 # Find ROS build system
 find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet)
-find_package(mdek_uwb_driver)
+find_package(mdek_uwb_driver REQUIRED)
+find_package(evb1000_driver REQUIRED)
+
+message(STATUS "MDEK: " ${mdek_uwb_driver_VERSION} " | EVB1000: " ${evb1000_driver_VERSION})
 
 # Describe ROS project
 option(ENABLE_ROS "Enable or disable building with ROS (if it is found)" ON)
 if (catkin_FOUND AND ENABLE_ROS)
     add_definitions(-DROS_AVAILABLE=1)
     catkin_package(
-            CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet mdek_uwb_driver
+            CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet mdek_uwb_driver evb1000_driver
             INCLUDE_DIRS src/
             LIBRARIES uvio_lib uvio_nodelet
     )
@@ -24,7 +27,7 @@ include_directories(
         ${CERES_INCLUDE_DIRS}
         ${catkin_INCLUDE_DIRS}
         ${mdek_uwb_driver_INCLUDE_DIRS}
-        ${evb1000_INCLUDE_DIRS}
+        ${evb1000_driver_INCLUDE_DIRS}
 )
 
 # Set link libraries used by all binaries
@@ -33,8 +36,8 @@ list(APPEND thirdparty_libraries
         ${OpenCV_LIBRARIES}
         ${CERES_LIBRARIES}
         ${catkin_LIBRARIES}
+        ${evb1000_driver_LIBRARIES}
         ${mdek_uwb_driver_LIBRARIES}
-        ${evb1000_LIBRARIES}
 )
 
 ##################################################
@@ -50,9 +53,9 @@ list(APPEND LIBRARY_SOURCES
 )
 
 file(GLOB_RECURSE LIBRARY_HEADERS "src/*.h")
-add_library(uvio_lib SHARED ${LIBRARY_SOURCES} ${LIBRARY_HEADERS})
+add_library(uvio_lib SHARED ${LIBRARY_SOURCES})
 target_link_libraries(uvio_lib ${thirdparty_libraries})
-target_include_directories(uvio_lib PUBLIC src/)
+target_include_directories(uvio_lib PUBLIC src)
 install(TARGETS uvio_lib
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

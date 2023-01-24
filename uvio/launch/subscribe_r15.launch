@@ -28,8 +28,8 @@
     <arg name="path_gt"     default="$(find ov_data)/$(arg config)/$(arg dataset).txt" />
 
     <!-- Nodelet -->
-    <arg name="use_nodelet"             default="true"/>
-    <arg name="enable_nodelet_manager"  default="true"/>
+    <arg name="use_nodelet"             default="false"/>
+    <arg name="enable_nodelet_manager"  default="false"/>
     <arg name="nodelet_manager_name"    default="nodelet_manager"/>
 
     <!-- Debug server -->
