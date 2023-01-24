@@ -22,10 +22,12 @@
 #ifndef UVIO_MANAGER_H
 #define UVIO_MANAGER_H
 
+#include "feat/FeatureDatabase.h"
 #include "core/UVioManagerOptions.h"
 #include "core/VioManager.h"
 #include "state/UVioState.h"
 #include "update/UpdaterUWB.h"
+#include "update/UpdaterZeroVelocity.h"
 
 #include "state/UVioPropagator.h"
 
@@ -38,6 +40,12 @@ public:
    * @brief Constructor
    */
   UVioManager(UVioManagerOptions &params_);
+
+  /**
+   * @brief Feed function for camera measurements
+   * @param message Contains our timestamp, images, and camera ids
+   */
+  inline void feed_measurement_camera(const ov_core::CameraData &message) { track_image_and_update(message); }
 
   /**
    * @brief Feed function for a uwb set of measurements
@@ -57,6 +65,16 @@ private:
   std::shared_ptr<UVioPropagator> propagator;
 
   /**
+   * @brief Given a new set of camera images, this will track them.
+   *
+   * If we are having stereo tracking, we should call stereo tracking functions.
+   * Otherwise we will try to track on each of the images passed.
+   *
+   * @param message Contains our timestamp, images, and camera ids
+   */
+  void track_image_and_update(const ov_core::CameraData &message);
+
+  /**
    * @brief This function will initialize UWB anchors into the state.
    */
   void initialize_uwb_anchors(const std::vector<AnchorData> &anchors);
@@ -69,6 +87,9 @@ private:
 
   /// Our uwb updater
   std::unique_ptr<UpdaterUWB> updaterUWB;
+
+  /// Our uwb measurements buffer
+  std::map<double, std::shared_ptr<UwbData>> past_measurements;
 
   /// Boolean if uwb anchors are initialized or not
   bool are_initialized_anchors = false;

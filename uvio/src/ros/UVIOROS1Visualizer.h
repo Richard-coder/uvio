@@ -35,6 +35,7 @@
 #include <mdek_uwb_driver/Uwb.h>
 #endif
 #include <ros/ROS1Visualizer.h>
+#include <sensor_msgs/Imu.h>
 
 #include "core/UVioManager.h"
 
@@ -57,6 +58,10 @@ public:
    * @param parser Configuration file parser
    */
   void setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser);
+
+
+  /// Callback for inertial information
+  void callback_inertial(const sensor_msgs::Imu::ConstPtr &msg);
 
   /// Callback for uwb information
 #if UWB_DRIVER == EVB_DRIVER
