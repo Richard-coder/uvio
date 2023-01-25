@@ -2,7 +2,7 @@
 <launch>
 
     <!-- what config we are going to run (should match folder name) -->
-    <arg name="verbosity"   default="DEBUG" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
+    <arg name="verbosity"   default="INFO" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
     <arg name="config"      default="uvio_euroc_mav" /> <!-- euroc_mav, tum_vi, rpng_aruco -->
     <arg name="config_path" default="$(find uvio)/../config/$(arg config)/estimator_config.yaml" />
 
@@ -25,7 +25,7 @@
 
     <!-- if we should viz the groundtruth -->
     <arg name="dolivetraj"  default="false" />
-    <arg name="path_gt"     default="$(find ov_data)/$(arg config)/$(arg dataset).txt" />
+    <arg name="path_gt"     default="$(find uvio)/../ov_data/euroc_mav/$(arg dataset).txt" />
 
     <!-- Nodelet -->
     <arg name="use_nodelet"             default="true"/>

@@ -192,11 +192,11 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
 
       ov_msckf::StateHelper::set_initial_covariance(state->_state, it.cov, H_order);
 
-      PRINT_DEBUG("Added anchor[%d] to state.\n", it.id);
+      PRINT_DEBUG("Anchor[%d] added to state.\n", it.id);
     }
   }
   are_initialized_anchors = true;
-  PRINT_INFO("Anchors initialized.\n");
+  PRINT_DEBUG("UWB anchors initialized.\n");
 }
 
 void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &message)
@@ -207,7 +207,7 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
   // Return if we where unable to propagate
   if(state->_state->_timestamp != message->timestamp) {
     printf(RED "[PROP]: Propagator unable to propagate the state forward in time!\n" RESET);
-    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET,message->timestamp-state->_state->_timestamp);
+    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET, message->timestamp-state->_state->_timestamp);
     return;
   }
 

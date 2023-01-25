@@ -33,14 +33,15 @@ void UpdaterUWB::update(std::shared_ptr<UVioState> state, const std::shared_ptr<
   double chi2_check = _chi_squared_table[res.rows()];
 
   // Check if we should update or not
-  if(chi2 > _options.uwb_chi2_multipler*chi2_check) {
-    PRINT_DEBUG("UWB chi2 = %f > %f\n", chi2, _options.chi2_multipler*chi2_check);
+  if (chi2 > _options.uwb_chi2_multipler*chi2_check) {
+    // Giulio: Change to PRINT_DEBUG after
+    PRINT_INFO(RED "UWB chi2 = %f > %f\n" RESET, chi2, _options.uwb_chi2_multipler*chi2_check);
     return;
   }
 
   // We are good! Perform measurement compression
   UVioUpdaterHelper::measurement_compress_inplace(H_x, res);
-  if(H_x.rows() < 1) {
+  if (H_x.rows() < 1) {
     return;
   }
 

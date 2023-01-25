@@ -4,14 +4,14 @@ tag0:
   rostopic: /mus/uwb
   n_anchors: 4
   calib_uwb_extrinsics: true
-  uwb_chi2_multipler: 1.0
-  uwb_sigma_range: 0.3
+  uwb_chi2_multipler: 2.0
+  uwb_sigma_range: 0.2
   prior_uwb_imu_cov: 0.1
   uwb_calib_extrinsic: [0.0, 0.0, 0.0]
 
 anchor0:
   id: 0
-  fix: true
+  fix: false
   p_AinG: [0.0, 0.0, 0.0]
   const_bias: 0.1
   dist_bias: 0.3
@@ -21,8 +21,8 @@ anchor0:
 
 anchor1:
   id: 1
-  fix: false
-  p_AinG: [3.0, 3.0, 0.0]
+  fix: true
+  p_AinG: [-3.0, -3.0, 0.0]
   const_bias: 0.1
   dist_bias: 0.3
   prior_p_AinG_cov: 0.05
@@ -32,7 +32,7 @@ anchor1:
 anchor2:
   id: 2
   fix: false
-  p_AinG: [12.3, 7, 1.1]
+  p_AinG: [-12.3, -7, 1.1]
   const_bias: 0.1
   dist_bias: 0.3
   prior_p_AinG_cov: 0.05
@@ -42,7 +42,7 @@ anchor2:
 anchor3:
   id: 3
   fix: false
-  p_AinG: [5.0, 9.4, 0.2]
+  p_AinG: [-5.0, -9.4, 0.2]
   const_bias: 0.1
   dist_bias: 0.3
   prior_p_AinG_cov: 0.05
