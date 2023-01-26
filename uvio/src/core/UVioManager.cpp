@@ -138,9 +138,9 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
   }
 
   // Retrive other measurement from last update up to vision measurement time
-  if(!past_measurements.empty()) {
-    for(auto it = past_measurements.begin(); it != past_measurements.lower_bound(message.timestamp); it++) {
-      if(it->first < message.timestamp) {
+  if (!past_measurements.empty()) {
+    for (auto it = past_measurements.begin(); it != past_measurements.lower_bound(message.timestamp); it++) {
+      if (it->first < message.timestamp) {
         do_uwb_propagate_update(it->second);
       }
     }
@@ -211,6 +211,15 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
     return;
   }
 
-  // EKF Update with UWB measurement
-  updaterUWB->update(state, message);
+  // EKF Update with all UWB measurements
+  /// Giulio: old version (will be removed)
+  // updaterUWB->update(state, message);
+
+  // Iterate through single ranges and update
+  /// Giulio: this is better because it allows to filter single measurements
+  /// with the chi2 test instead of discarding all of them if just one is bad
+  for (const auto &it : message->uwb_ranges) {
+    // EKF Update with single UWB measurement
+    updaterUWB->update_single(state, message->timestamp, it.first, it.second);
+  }
 }
