@@ -143,3 +143,99 @@ void UVioUpdaterHelper::get_uwb_jacobian_full(std::shared_ptr<UVioState> state, 
     }
   }
 }
+
+void UVioUpdaterHelper::get_uwb_jacobian_single(std::shared_ptr<UVioState> state, const double timestamp, const size_t anchor_id, const double range,
+                                                Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<std::shared_ptr<ov_type::Type> > &x_order) {
+
+  // Check there exist a correspondence in Id between measurment and anchors
+  std::shared_ptr<UWB_anchor> anchor_ptr;
+  try {
+    anchor_ptr = state->_calib_GLOBALtoANCHORS.at(anchor_id);
+  } catch (const std::out_of_range &oor) {
+    PRINT_DEBUG(RED "[UWB Update] No anchor found for the given measurement ID %d" RESET, anchor_id);
+    return;
+  }
+
+  // Compute the size of the states involved with this feature
+  int total_hx = 0;
+  std::unordered_map<std::shared_ptr<ov_type::Type>, size_t> map_hx;
+
+  // Add state clone
+  std::shared_ptr<ov_type::PoseJPL> clone_I = state->_state->_imu->pose();
+  map_hx.insert({clone_I, total_hx});
+  x_order.push_back(clone_I);
+  total_hx += clone_I->size();
+
+  // Add extrinsics
+  std::shared_ptr<ov_type::Vec> calibration = state->_calib_UWBtoIMU;
+  if (state->_options.do_calib_uwb_extrinsics) {
+    map_hx.insert({calibration, total_hx});
+    x_order.push_back(calibration);
+    total_hx += calibration->size();
+  }
+
+  // Add anchor
+  if (!anchor_ptr->fixed()) {
+    map_hx.insert({anchor_ptr, total_hx});
+    x_order.push_back(anchor_ptr);
+    total_hx += anchor_ptr->size();
+  }
+
+  //=========================================================================
+  //=========================================================================
+
+  // Retrive what we need for the Jacobian
+  Eigen::Matrix3d R_GtoI = clone_I->Rot();
+  Eigen::Vector3d p_IinG = clone_I->pos();
+  Eigen::Vector3d p_IinU = calibration->value();
+  AnchorData anchor = anchor_ptr->anchor();
+
+  // Allocate our residual, corrected measurement and Jacobians and predicted measurment (H_x_y = derivative of x wrt y)
+  Eigen::MatrixXd H_n = Eigen::MatrixXd::Zero(1, 3);
+  Eigen::MatrixXd H_z_I = Eigen::MatrixXd::Zero(3, 6);
+  Eigen::MatrixXd H_I = Eigen::MatrixXd::Zero(1, 6);
+  Eigen::MatrixXd H_z_cal = Eigen::MatrixXd::Zero(1, 3);
+  Eigen::MatrixXd H_z_anc = Eigen::MatrixXd::Zero(1, 5);
+  res = Eigen::VectorXd::Zero(1);
+
+  //=========================================================================
+  //=========================================================================
+
+  // Allocate Jacobians
+  H_x = Eigen::MatrixXd::Zero(1, total_hx);
+
+  // Compute the residual
+  // Alessandro 2023: here anchor.dist_bias is alpha and (1 + anchor.dist_bias) is beta!!! Pay attention to it!
+  res(0) = range -
+      ((1 + anchor.dist_bias) * ((anchor.p_AinG - (R_GtoI.transpose() * (-p_IinU) + p_IinG)).norm()) + anchor.const_bias);
+
+  // DEBUG
+  PRINT_DEBUG(YELLOW "Range measurement from anchor %d = %lf\n" RESET, anchor.id, range);
+  PRINT_DEBUG(YELLOW "Predicted measurement from anchor %d = %lf\n" RESET, anchor.id,
+              ((1 + anchor.dist_bias) * ((anchor.p_AinG - (R_GtoI.transpose() * (-p_IinU) + p_IinG)).norm()) + anchor.const_bias));
+  PRINT_DEBUG(YELLOW "Residual for anchor %d = %lf\n" RESET, anchor.id, res(0));
+
+  // Compute Jacobian blocks (keep the order of variables defined in state, rotation first then translation)
+  H_n.noalias() = ((anchor.p_AinG - (R_GtoI.transpose() * (-p_IinU) + p_IinG)).transpose()) /
+      (anchor.p_AinG - (R_GtoI.transpose() * (-p_IinU) + p_IinG)).norm();
+  H_z_I.block(0, 0, 3, 3).noalias() = R_GtoI.transpose() * ov_core::skew_x(-p_IinU);
+  H_z_I.block(0, 3, 3, 3).noalias() = -Eigen::Matrix3d::Identity();
+  H_I.noalias() = (1 + anchor.dist_bias) * H_n * H_z_I;
+
+  // CHAINRULE: get state Jacobian
+  H_x.block(0, map_hx[clone_I], 1, clone_I->size()).noalias() = H_I;
+
+  // Compute Jacobian wrt calibration state
+  if (state->_options.do_calib_uwb_extrinsics) {
+    H_z_cal.noalias() = (1 + anchor.dist_bias) * H_n * R_GtoI.transpose();
+    H_x.block(0, map_hx[calibration], 1, calibration->size()).noalias() = H_z_cal;
+  }
+
+  // Compute Jacobian wrt anchor (p_AinU, const_bias, dist_bias)
+  if (!anchor_ptr->fixed()) {
+    H_z_anc.block(0, 0, 1, 3).noalias() = (1 + anchor.dist_bias) * H_n * R_GtoI.transpose();
+    H_z_anc(0, 3) = 1;
+    H_z_anc(0, 4) = (anchor.p_AinG - (R_GtoI.transpose() * (-p_IinU) + p_IinG)).norm();
+    H_x.block(0, map_hx[anchor_ptr], 1, anchor_ptr->size()).noalias() = H_z_anc;
+  }
+}

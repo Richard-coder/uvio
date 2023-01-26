@@ -52,7 +52,23 @@ public:
    * @param[out] res Measurement residual for this feature
    * @param[out] x_order Extra variables our extra Jacobian has
    */
-  static void get_uwb_jacobian_full(std::shared_ptr<UVioState> state, std::shared_ptr<UwbData> measurement, Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<std::shared_ptr<ov_type::Type>> &x_order);
+  static void get_uwb_jacobian_full(std::shared_ptr<UVioState> state, std::shared_ptr<UwbData> measurement, Eigen::MatrixXd &H_x,
+                                    Eigen::VectorXd &res, std::vector<std::shared_ptr<ov_type::Type>> &x_order);
+
+  /**
+   * @brief Will construct the "stacked" Jacobians for a single uwb measurement
+   *
+   * @param[in] state State of the filter system
+   * @param[in] timestamp Timestamp of the measurement
+   * @param[in] anchor_id ID of the anchor that made the measurement
+   * @param[in] range Distance measurement
+   * @param[out] H_x Extra Jacobians in respect to the state
+   * @param[out] res Measurement residual for this feature
+   * @param[out] x_order Extra variables our extra Jacobian has
+   *
+   */
+  static void get_uwb_jacobian_single(std::shared_ptr<UVioState> state, const double timestamp, const size_t anchor_id, const double range,
+                                      Eigen::MatrixXd &H_x, Eigen::VectorXd &res, std::vector<std::shared_ptr<ov_type::Type>> &x_order);
 
 };
 
