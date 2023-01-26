@@ -36,7 +36,23 @@ public:
     }
   }
 
+  /**
+   * @brief update performs EKF update all at once given a set of measurements from multiple anchors
+   *
+   * @param[in] state State of the filter system
+   * @param[in] message uwb measurements
+   */
   void update(std::shared_ptr<UVioState> state, const std::shared_ptr<UwbData>& message);
+
+  /**
+   * @brief update_single performs EKF update given a single measurement from an anchor
+   *
+   * @param[in] state State of the filter system
+   * @param[in] timestamp Timestamp of the single range measurement
+   * @param[in] anchor_id Uwb anchor id of the single range measurement
+   * @param[in] range Measured distance between tag-anchor
+   */
+  void update_single(std::shared_ptr<UVioState> state, const double timestamp, const size_t anchor_id, const double range);
 
 protected:
 
