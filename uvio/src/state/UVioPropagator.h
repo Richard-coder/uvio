@@ -36,13 +36,16 @@ namespace uvio {
  * We will first select what measurements we need to propagate with.
  * We then compute the state transition matrix at each step and update the state and covariance.
  * For derivations look at @ref propagation page which has detailed equations.
+ *
+ * This class is derived from ov_msckf::Propagator which has a deleted copy constructor. Since we
+ * need the function uvio::UVioPropagator::propagate to act on the protected members of Propagator
+ * a downcasting is done. Therefore NO DATA MEMBERS must be present in this class!!!
  */
 class UVioPropagator : public ov_msckf::Propagator {
 
 public:
 
-  UVioPropagator(ov_msckf::NoiseManager noises, double gravity_mag, std::shared_ptr<ov_msckf::Propagator> propagator)
-    : ov_msckf::Propagator(noises, gravity_mag), propagator_(std::static_pointer_cast<UVioPropagator>(propagator)) {}
+  using ov_msckf::Propagator::Propagator;
 
   ~UVioPropagator() {}
 
@@ -56,10 +59,7 @@ public:
    * @param state Pointer to state
    * @param timestamp Time
    */
-  void propagate(std::shared_ptr<UVioState> state, double timestamp);
-
-  /// Pointer to the (uvio)propagator (needed to access protected members)
-  const std::shared_ptr<UVioPropagator> propagator_;
+  void propagate(std::shared_ptr<ov_msckf::State> state, double timestamp);
 
 };
 
