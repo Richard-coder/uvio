@@ -36,6 +36,8 @@
 #endif
 #include <ros/ROS1Visualizer.h>
 #include <sensor_msgs/Imu.h>
+#include "uvio/UwbAnchor.h"
+#include "uvio/UwbAnchorArrayStamped.h"
 
 #include "core/UVioManager.h"
 
@@ -70,9 +72,16 @@ public:
   void callback_uwb(const mdek_uwb_driver::UwbConstPtr &msg_uwb);
 #endif
 
+  /// Callback for anchors initialization information
+  void callback_anchors_init(const uvio::UwbAnchorArrayStampedConstPtr& msg);
+
 private:
   /// UWB subscriber
   ros::Subscriber _sub_uwb;
+  ros::Subscriber _sub_anchors_init;
+
+  /// UWB anchors initialization parameter
+  uint _n_anchors_to_fix;
 
   /// Core application of the filter system
   std::shared_ptr<UVioManager> _app;
