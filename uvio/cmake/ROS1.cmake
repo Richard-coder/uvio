@@ -11,6 +11,19 @@ message(STATUS "MDEK: " ${mdek_uwb_driver_VERSION} " | EVB1000: " ${evb1000_driv
 option(ENABLE_ROS "Enable or disable building with ROS (if it is found)" ON)
 if (catkin_FOUND AND ENABLE_ROS)
     add_definitions(-DROS_AVAILABLE=1)
+
+    ## Generate messages in the 'msg' folder
+    add_message_files(DIRECTORY msg
+        FILES
+        UwbAnchor.msg
+        UwbAnchorArrayStamped.msg
+    )
+
+    ## Generate added messages and services with any dependencies listed here
+    generate_messages(
+        DEPENDENCIES std_msgs nav_msgs sensor_msgs geometry_msgs
+    )
+
     catkin_package(
             CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet mdek_uwb_driver evb1000_driver
             INCLUDE_DIRS src/

@@ -1,8 +1,12 @@
 %YAML:1.0
 
+init:
+  rostopic: /uwb_init/uwb_anchors
+  n_anchors_to_fix: 2
+
 tag0:
   rostopic: /mus/uwb
-  n_anchors: 4
+  n_anchors: 0
   calib_uwb_extrinsics: true
   uwb_chi2_multipler: 1.0
   uwb_sigma_range: 0.2
@@ -11,7 +15,7 @@ tag0:
 
 anchor0:
   id: 0
-  fix: false
+  fix: true
   p_AinG: [0.0, 0.0, 0.0]
   const_bias: 0.1
   dist_bias: 0.3
@@ -31,7 +35,7 @@ anchor1:
 
 anchor2:
   id: 2
-  fix: false
+  fix: true
   p_AinG: [-12.3, -7, 1.1]
   const_bias: 0.1
   dist_bias: 0.3
@@ -41,7 +45,7 @@ anchor2:
 
 anchor3:
   id: 3
-  fix: false
+  fix: true
   p_AinG: [-5.0, -9.4, 0.2]
   const_bias: 0.1
   dist_bias: 0.3
