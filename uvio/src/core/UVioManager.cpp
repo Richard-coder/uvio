@@ -25,9 +25,9 @@ using namespace uvio;
 
 UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::VioManager(params_), params(params_) {
 
-  /// Initialize uvio state and propagator
+  /// Initialize uvio state and downcast propagator
   state = std::make_shared<UVioState>(params.uvio_state_options, this->get_state());
-  propagator = std::make_shared<UVioPropagator>(params.imu_noises, params.gravity_mag, this->get_propagator());
+  propagator = std::static_pointer_cast<UVioPropagator>(this->get_propagator());
 
   // Initialize p_UinI (calibration uwb-imu)
   if (params.uvio_state_options.do_calib_uwb_extrinsics) {
@@ -41,17 +41,15 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * params.uvio_state_options.prior_uwb_imu_cov;
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
     ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
-    PRINT_DEBUG("Calibration uwb-imu initialized.\n");
+    PRINT_INFO("Calibration uwb-imu initialized\n");
   }
 
   // Our UWB sensor extrinsic transform
   state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
   state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
 
-  // Initialize anchors
-  if (!params.uwb_anchor_extrinsics.empty()) {
-    initialize_uwb_anchors(params.uwb_anchor_extrinsics);
-  }
+  // Try to nitialize anchors
+  try_to_initialize_uwb_anchors(params.uwb_anchors);
 
   // Make the updater!
   updaterUWB = std::make_unique<UpdaterUWB>(params.uwb_options);
@@ -72,6 +70,34 @@ void UVioManager::feed_measurement_uwb(const UwbData &message) {
   }
 
   past_measurements.insert({message.timestamp, std::make_shared<UwbData>(message)});
+}
+
+void UVioManager::try_to_initialize_uwb_anchors(const std::vector<AnchorData> &anchors) {
+
+  // Check if anchors are already initialized
+  if (are_initialized_anchors) {
+    PRINT_INFO("UWB anchors already initialized\n");
+    return;
+  }
+
+  // Check if argument is empty
+  if (anchors.empty()) {
+    PRINT_INFO("UWB anchors not initialized (anchors not provided)\n");
+    return;
+  }
+
+  // Initialize anchors
+  params.uwb_anchors = anchors;
+
+  PRINT_INFO("Provided anchors for initialization:\n");
+  for (const auto &it : params.uwb_anchors) {
+      PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.id,
+                  it.p_AinG.x(), it.p_AinG.y(), it.p_AinG.z(), it.const_bias, it.dist_bias);
+      std::cout << "cov = \n" << it.cov << "\n" << std::endl;
+  }
+
+  initialize_uwb_anchors();
+
 }
 
 void UVioManager::track_image_and_update(const ov_core::CameraData &message_const) {
@@ -165,11 +191,15 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
   do_feature_propagate_update(message);
 }
 
-void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
-{
-  for (const auto &it : anchors) {
+void UVioManager::initialize_uwb_anchors() {
+
+  assert(!params.uwb_anchors.empty());
+
+  for (const auto &it : params.uwb_anchors) {
     std::shared_ptr<UWB_anchor> anchor = std::make_shared<UWB_anchor>(it);
     state->_calib_GLOBALtoANCHORS.insert({it.id, anchor});
+
+    PRINT_INFO("Anchor[%d] initialized\n", it.id);
 
     // Initialize state variable if option enabled and anchor not fixed
     if (!it.fix) {
@@ -192,17 +222,29 @@ void UVioManager::initialize_uwb_anchors(const std::vector<AnchorData> &anchors)
 
       ov_msckf::StateHelper::set_initial_covariance(state->_state, it.cov, H_order);
 
-      PRINT_DEBUG("Anchor[%d] added to state.\n", it.id);
+      PRINT_INFO("Anchor[%d] added to state\n", it.id);
     }
   }
   are_initialized_anchors = true;
-  PRINT_DEBUG("UWB anchors initialized.\n");
+  PRINT_INFO("UWB anchors correctly initialized\n");
 }
 
-void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &message)
-{
+void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &message) {
+
+  // Check if we have at least one measurement from an initialized anchor
+  bool valid = false;
+  for (const auto &it : message->uwb_ranges) {
+      if (state->_calib_GLOBALtoANCHORS.find(it.first) != state->_calib_GLOBALtoANCHORS.end()) {
+          valid = true;
+          break;
+      }
+  }
+
+  // Return if no matching was found
+  if (!valid) { return; }
+
   // Propagate the state forward to the current update time
-  propagator->propagate(state, message->timestamp);
+  propagator->propagate(state->_state, message->timestamp);
 
   // Return if we where unable to propagate
   if(state->_state->_timestamp != message->timestamp) {
@@ -211,15 +253,14 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
     return;
   }
 
-  // EKF Update with all UWB measurements
-  /// Giulio: old version (will be removed)
-  // updaterUWB->update(state, message);
-
   // Iterate through single ranges and update
   /// Giulio: this is better because it allows to filter single measurements
   /// with the chi2 test instead of discarding all of them if just one is bad
   for (const auto &it : message->uwb_ranges) {
-    // EKF Update with single UWB measurement
-    updaterUWB->update_single(state, message->timestamp, it.first, it.second);
+    // Check if measurement is from initialized anchor
+    if (state->_calib_GLOBALtoANCHORS.find(it.first) != state->_calib_GLOBALtoANCHORS.end()) {
+      // EKF Update with single UWB measurement
+      updaterUWB->update_single(state, message->timestamp, it.first, it.second);
+    }
   }
 }

@@ -53,6 +53,12 @@ public:
    */
   void feed_measurement_uwb(const UwbData &message);
 
+  /**
+   * @brief Initialize uwb anchors
+   * @param anchors
+   */
+  void try_to_initialize_uwb_anchors(const std::vector<AnchorData> &anchors);
+
 private:
 
   /// Manager parameters
@@ -77,7 +83,7 @@ private:
   /**
    * @brief This function will initialize UWB anchors into the state.
    */
-  void initialize_uwb_anchors(const std::vector<AnchorData> &anchors);
+  void initialize_uwb_anchors();
 
   /**
   * @brief This will do the propagation and uwb update to the state
