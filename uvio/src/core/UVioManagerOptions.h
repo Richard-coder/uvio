@@ -20,7 +20,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
   Eigen::Vector3d uwb_extrinsics = Eigen::Vector3d::Zero();
 
   /// uwb anchors references (id, p_AinG, const_bias, dist_bias, Cov).
-  std::vector<AnchorData> uwb_anchor_extrinsics;
+  std::vector<AnchorData> uwb_anchors;
 
   /// UWB options
   UVioUpdaterOptions uwb_options;
@@ -33,6 +33,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
    * @param parser If not null, this parser will be used to load our parameters
    */
   inline void print_and_load(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
+
     ov_msckf::VioManagerOptions::print_and_load(parser);
 
     PRINT_DEBUG("\n\nUVIO PARAMETERS:\n");
@@ -46,6 +47,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
       parser->parse_external("config_uwb", "tag0", "uwb_calib_extrinsic", uwb_calib_extrinsic);
       uwb_extrinsics << uwb_calib_extrinsic.at(0), uwb_calib_extrinsic.at(1), uwb_calib_extrinsic.at(2);
 
+      /// Parse anchors
       for (int i = 0; i < n_anchors; i++) {
         int anch_id;
         bool anch_fix;
@@ -68,7 +70,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
         anchor.dist_bias = dist_b;
         anchor.cov.diagonal() << p, p, p, c, d;
 
-        uwb_anchor_extrinsics.push_back(anchor);
+        uwb_anchors.push_back(anchor);
       }
     }
 
@@ -78,18 +80,18 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
     uvio_state_options.print_and_load(parser);
     uwb_options.print_and_load(parser);
 
-    for (size_t i = 0; i < uwb_anchor_extrinsics.size(); i++) {
-      PRINT_DEBUG("  - anchor[%d]: fixed = %s\n", uwb_anchor_extrinsics.at(i).id, uwb_anchor_extrinsics.at(i).fix ? "true" : "false");
-      PRINT_DEBUG("  - anchor[%d]: p_AinG = [%.3f, %.3f, %.3f]\n", uwb_anchor_extrinsics.at(i).id,
-                  uwb_anchor_extrinsics.at(i).p_AinG.x(), uwb_anchor_extrinsics.at(i).p_AinG.y(), uwb_anchor_extrinsics.at(i).p_AinG.z());
-      PRINT_DEBUG("  - anchor[%d]: const_bias = %.3f\n", uwb_anchor_extrinsics.at(i).id, uwb_anchor_extrinsics.at(i).const_bias);
-      PRINT_DEBUG("  - anchor[%d]: dist_bias = %.3f\n", uwb_anchor_extrinsics.at(i).id, uwb_anchor_extrinsics.at(i).dist_bias);
-      PRINT_DEBUG("  - anchor[%d]: cov.diagonal() = [%.3f, %.3f, %.3f, %.4f, %.4f]\n\n", uwb_anchor_extrinsics.at(i).id,
-                  uwb_anchor_extrinsics.at(i).cov.diagonal()(0),
-                  uwb_anchor_extrinsics.at(i).cov.diagonal()(1),
-                  uwb_anchor_extrinsics.at(i).cov.diagonal()(2),
-                  uwb_anchor_extrinsics.at(i).cov.diagonal()(3),
-                  uwb_anchor_extrinsics.at(i).cov.diagonal()(4));
+    for (size_t i = 0; i < uwb_anchors.size(); i++) {
+      PRINT_DEBUG("  - anchor[%d]: fixed = %s\n", uwb_anchors.at(i).id, uwb_anchors.at(i).fix ? "true" : "false");
+      PRINT_DEBUG("  - anchor[%d]: p_AinG = [%.3f, %.3f, %.3f]\n", uwb_anchors.at(i).id,
+                  uwb_anchors.at(i).p_AinG.x(), uwb_anchors.at(i).p_AinG.y(), uwb_anchors.at(i).p_AinG.z());
+      PRINT_DEBUG("  - anchor[%d]: const_bias = %.3f\n", uwb_anchors.at(i).id, uwb_anchors.at(i).const_bias);
+      PRINT_DEBUG("  - anchor[%d]: dist_bias = %.3f\n", uwb_anchors.at(i).id, uwb_anchors.at(i).dist_bias);
+      PRINT_DEBUG("  - anchor[%d]: cov.diagonal() = [%.3f, %.3f, %.3f, %.4f, %.4f]\n\n", uwb_anchors.at(i).id,
+                  uwb_anchors.at(i).cov.diagonal()(0),
+                  uwb_anchors.at(i).cov.diagonal()(1),
+                  uwb_anchors.at(i).cov.diagonal()(2),
+                  uwb_anchors.at(i).cov.diagonal()(3),
+                  uwb_anchors.at(i).cov.diagonal()(4));
     }
   }
 };
