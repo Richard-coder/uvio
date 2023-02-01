@@ -58,14 +58,14 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
 void UVioManager::feed_measurement_uwb(const UwbData &message) {
 
   // Check if vio is initialized, anchors are initialized and distace traveled is
-  // greater than 1 meter, else return
-  if(!(is_initialized_vio && are_initialized_anchors && distance > 0.5)) {
+  // greater than 0.5 meter, else return
+  if (!(is_initialized_vio && are_initialized_anchors && distance > 0.5)) {
     return;
   }
 
   // Return if the uwb measurement is out of order otherwise feed our bar measuremnts
-  if(state->_state->_timestamp >= message.timestamp) {
-    PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET, (message.timestamp-state->_state->_timestamp));
+  if (state->_state->_timestamp >= message.timestamp) {
+    PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET, (message.timestamp - state->_state->_timestamp));
     return;
   }
 
@@ -88,16 +88,16 @@ void UVioManager::try_to_initialize_uwb_anchors(const std::vector<AnchorData> &a
 
   // Initialize anchors
   params.uwb_anchors = anchors;
+  params.n_anchors = anchors.size();
 
   PRINT_INFO("Provided anchors for initialization:\n");
   for (const auto &it : params.uwb_anchors) {
-      PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.id,
-                  it.p_AinG.x(), it.p_AinG.y(), it.p_AinG.z(), it.const_bias, it.dist_bias);
-      std::cout << "cov = \n" << it.cov << "\n" << std::endl;
+    PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.id, it.p_AinG.x(), it.p_AinG.y(),
+               it.p_AinG.z(), it.const_bias, it.dist_bias);
+    std::cout << "cov = \n" << it.cov << "\n" << std::endl;
   }
 
   initialize_uwb_anchors();
-
 }
 
 void UVioManager::track_image_and_update(const ov_core::CameraData &message_const) {
@@ -171,19 +171,21 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
       }
     }
 
-    // Clear all the past measurement and throw away also measurement which have the same timestamp of the vision measurment even if not processed
-    past_measurements.erase(past_measurements.begin(),past_measurements.upper_bound(message.timestamp));
+    // Clear all the past measurement and throw away also measurement which have the same timestamp of the vision measurment even if not
+    // processed
+    past_measurements.erase(past_measurements.begin(), past_measurements.upper_bound(message.timestamp));
   }
 
   // Print our current uwb state
   if (params.uvio_state_options.do_calib_uwb_extrinsics) {
-    PRINT_INFO(YELLOW "calib_UWtoIMU = [%.3f,%.3f,%.3f]\n" RESET, state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1), state->_calib_UWBtoIMU->value()(2));
+    PRINT_INFO(YELLOW "calib_UWtoIMU = [%.3f,%.3f,%.3f]\n" RESET, state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
+               state->_calib_UWBtoIMU->value()(2));
   }
   for (const auto &it : state->_calib_GLOBALtoANCHORS) {
     if (!it.second->fixed()) {
       PRINT_INFO(YELLOW "anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n" RESET, it.first,
-                  it.second->p_AinG()->value()(0), it.second->p_AinG()->value()(1), it.second->p_AinG()->value()(2),
-                  it.second->const_bias()->value()(0), it.second->dist_bias()->value()(0));
+                 it.second->p_AinG()->value()(0), it.second->p_AinG()->value()(1), it.second->p_AinG()->value()(2),
+                 it.second->const_bias()->value()(0), it.second->dist_bias()->value()(0));
     }
   }
 
@@ -214,8 +216,7 @@ void UVioManager::initialize_uwb_anchors() {
       Eigen::MatrixXd H_L = Eigen::MatrixXd::Identity(5, 5);
       Eigen::MatrixXd R = Eigen::MatrixXd::Identity(5, 5);
       Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
-      ov_msckf::StateHelper::initialize_invertible(
-            state->_state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
+      ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_GLOBALtoANCHORS.at(it.id), H_order, H_R, H_L, R, res);
 
       H_order.clear();
       H_order.push_back(state->_calib_GLOBALtoANCHORS.at(it.id));
@@ -234,22 +235,24 @@ void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &messag
   // Check if we have at least one measurement from an initialized anchor
   bool valid = false;
   for (const auto &it : message->uwb_ranges) {
-      if (state->_calib_GLOBALtoANCHORS.find(it.first) != state->_calib_GLOBALtoANCHORS.end()) {
-          valid = true;
-          break;
-      }
+    if (state->_calib_GLOBALtoANCHORS.find(it.first) != state->_calib_GLOBALtoANCHORS.end()) {
+      valid = true;
+      break;
+    }
   }
 
   // Return if no matching was found
-  if (!valid) { return; }
+  if (!valid) {
+    return;
+  }
 
   // Propagate the state forward to the current update time
   propagator->propagate(state->_state, message->timestamp);
 
   // Return if we where unable to propagate
-  if(state->_state->_timestamp != message->timestamp) {
+  if (state->_state->_timestamp != message->timestamp) {
     printf(RED "[PROP]: Propagator unable to propagate the state forward in time!\n" RESET);
-    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET, message->timestamp-state->_state->_timestamp);
+    printf(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET, message->timestamp - state->_state->_timestamp);
     return;
   }
 
