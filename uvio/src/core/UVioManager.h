@@ -22,9 +22,9 @@
 #ifndef UVIO_MANAGER_H
 #define UVIO_MANAGER_H
 
-#include "feat/FeatureDatabase.h"
 #include "core/UVioManagerOptions.h"
 #include "core/VioManager.h"
+#include "feat/FeatureDatabase.h"
 #include "state/UVioState.h"
 #include "update/UpdaterUWB.h"
 #include "update/UpdaterZeroVelocity.h"
@@ -45,7 +45,7 @@ public:
    * @brief Feed function for camera measurements
    * @param message Contains our timestamp, images, and camera ids
    */
-  inline void feed_measurement_camera(const ov_core::CameraData &message) { track_image_and_update(message); }
+  void feed_measurement_camera(const ov_core::CameraData &message) { track_image_and_update(message); }
 
   /**
    * @brief Feed function for a uwb set of measurements
@@ -59,8 +59,12 @@ public:
    */
   void try_to_initialize_uwb_anchors(const std::vector<AnchorData> &anchors);
 
-private:
+  /**
+   * @brief Get number of fixed anchors
+   */
+  int get_n_anchors_to_fix() { return params.n_anchors_to_fix; };
 
+private:
   /// Manager parameters
   UVioManagerOptions params;
 
@@ -81,15 +85,21 @@ private:
   void track_image_and_update(const ov_core::CameraData &message);
 
   /**
-   * @brief This function will initialize UWB anchors into the state.
+   * @brief This function will initialize all UWB anchors stored in params.uwb_anchors into the state.
    */
   void initialize_uwb_anchors();
 
   /**
-  * @brief This will do the propagation and uwb update to the state
-  * @param Reference to pointer to uwb range measurements
-  */
-  void do_uwb_propagate_update(const std::shared_ptr<UwbData>& message);
+   * @brief This function will initialize a new single UWB anchor provided as argument into the state.
+   * @param anchor
+   */
+  void initialize_new_uwb_anchor(const AnchorData &anchor);
+
+  /**
+   * @brief This will do the propagation and uwb update to the state
+   * @param Reference to pointer to uwb range measurements
+   */
+  void do_uwb_propagate_update(const std::shared_ptr<UwbData> &message);
 
   /// Our uwb updater
   std::unique_ptr<UpdaterUWB> updaterUWB;

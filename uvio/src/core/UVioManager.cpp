@@ -42,13 +42,15 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
     ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
     PRINT_INFO("Calibration uwb-imu initialized\n");
+    PRINT_INFO("calib_UWtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
+               state->_calib_UWBtoIMU->value()(2));
   }
 
   // Our UWB sensor extrinsic transform
   state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
   state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
 
-  // Try to nitialize anchors
+  // Initialize anchors (if provided in config file)
   try_to_initialize_uwb_anchors(params.uwb_anchors);
 
   // Make the updater!
@@ -74,30 +76,38 @@ void UVioManager::feed_measurement_uwb(const UwbData &message) {
 
 void UVioManager::try_to_initialize_uwb_anchors(const std::vector<AnchorData> &anchors) {
 
-  // Check if anchors are already initialized
-  if (are_initialized_anchors) {
-    PRINT_INFO("UWB anchors already initialized\n");
-    return;
-  }
-
   // Check if argument is empty
   if (anchors.empty()) {
     PRINT_INFO("UWB anchors not initialized (anchors not provided)\n");
     return;
   }
 
-  // Initialize anchors
-  params.uwb_anchors = anchors;
-  params.n_anchors = anchors.size();
-
-  PRINT_INFO("Provided anchors for initialization:\n");
-  for (const auto &it : params.uwb_anchors) {
-    PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.id, it.p_AinG.x(), it.p_AinG.y(),
-               it.p_AinG.z(), it.const_bias, it.dist_bias);
-    std::cout << "cov = \n" << it.cov << "\n" << std::endl;
+  // Check if anchors are not initialized yet and initialize them
+  if (!are_initialized_anchors) {
+    params.uwb_anchors = anchors;
+    params.n_anchors = anchors.size();
+    int n_fixed_anchors = std::count_if(anchors.begin(), anchors.end(), [](const AnchorData &a) { return a.fix; });
+    params.n_anchors_to_fix = std::max(0, params.n_anchors_to_fix - n_fixed_anchors);
+    initialize_uwb_anchors();
+    return;
   }
 
-  initialize_uwb_anchors();
+  // Check if we have new anchors to initialize
+  PRINT_INFO("UWB anchors already initialized. Checking for new anchors to initialize\n");
+  for (const auto &it : anchors) {
+    // If anchor is not in the state, initialize it
+    if (state->_calib_GLOBALtoANCHORS.find(it.id) == state->_calib_GLOBALtoANCHORS.end()) {
+      PRINT_INFO(GREEN "New anchor found. Initializing anchor[%d]\n" RESET, it.id);
+      params.uwb_anchors.push_back(it);
+      params.n_anchors++;
+      if (it.fix) {
+        params.n_anchors_to_fix = std::max(0, params.n_anchors_to_fix - 1);
+      }
+      initialize_new_uwb_anchor(it);
+    }
+  }
+
+  return;
 }
 
 void UVioManager::track_image_and_update(const ov_core::CameraData &message_const) {
@@ -195,7 +205,17 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
 
 void UVioManager::initialize_uwb_anchors() {
 
-  assert(!params.uwb_anchors.empty());
+  // Check if anchors are initialized
+  if (are_initialized_anchors) {
+    PRINT_ERROR("UWB anchors already initialized\n");
+    return;
+  }
+
+  // Check if we have any anchors
+  if (params.uwb_anchors.empty()) {
+    PRINT_ERROR("UWB anchors not specified\n");
+    return;
+  }
 
   for (const auto &it : params.uwb_anchors) {
     std::shared_ptr<UWB_anchor> anchor = std::make_shared<UWB_anchor>(it);
@@ -225,9 +245,63 @@ void UVioManager::initialize_uwb_anchors() {
 
       PRINT_INFO("Anchor[%d] added to state\n", it.id);
     }
+
+    // Print anchor info
+    PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", it.id, it.p_AinG.x(), it.p_AinG.y(),
+               it.p_AinG.z(), it.const_bias, it.dist_bias);
+    std::cout << "cov = \n" << it.cov << "\n" << std::endl;
   }
   are_initialized_anchors = true;
   PRINT_INFO("UWB anchors correctly initialized\n");
+}
+
+void UVioManager::initialize_new_uwb_anchor(const AnchorData &anchor) {
+
+  // Check if anchors are initialized
+  if (!are_initialized_anchors) {
+    PRINT_ERROR("UWB anchors not initialized\n");
+    return;
+  }
+
+  // Check if anchor is already initialized
+  if (state->_calib_GLOBALtoANCHORS.find(anchor.id) != state->_calib_GLOBALtoANCHORS.end()) {
+    PRINT_ERROR("Anchor[%d] already initialized\n", anchor.id);
+    return;
+  }
+
+  // Initialize anchor
+  std::shared_ptr<UWB_anchor> uwb_anchor = std::make_shared<UWB_anchor>(anchor);
+  state->_calib_GLOBALtoANCHORS.insert({anchor.id, uwb_anchor});
+
+  PRINT_INFO("Anchor[%d] initialized\n", anchor.id);
+
+  // Initialize state variable if option enabled and anchor not fixed
+  if (!anchor.fix) {
+
+    // Initialize state variables
+    std::vector<std::shared_ptr<ov_type::Type>> H_order;
+
+    // Need to fake it...
+    H_order.push_back(state->_state->_imu->q());
+
+    Eigen::MatrixXd H_R = Eigen::MatrixXd::Zero(5, 3);
+    Eigen::MatrixXd H_L = Eigen::MatrixXd::Identity(5, 5);
+    Eigen::MatrixXd R = Eigen::MatrixXd::Identity(5, 5);
+    Eigen::VectorXd res = Eigen::VectorXd::Zero(5);
+    ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_GLOBALtoANCHORS.at(anchor.id), H_order, H_R, H_L, R, res);
+
+    H_order.clear();
+    H_order.push_back(state->_calib_GLOBALtoANCHORS.at(anchor.id));
+
+    ov_msckf::StateHelper::set_initial_covariance(state->_state, anchor.cov, H_order);
+
+    PRINT_INFO("Anchor[%d] added to state\n", anchor.id);
+  }
+
+  // Print anchor info
+  PRINT_INFO("anchor[%d]: p_AinG = [%.3f, %.3f, %.3f] | const_bias = %.4f | dist_bias = %.4f\n", anchor.id, anchor.p_AinG.x(),
+             anchor.p_AinG.y(), anchor.p_AinG.z(), anchor.const_bias, anchor.dist_bias);
+  std::cout << "cov = \n" << anchor.cov << "\n" << std::endl;
 }
 
 void UVioManager::do_uwb_propagate_update(const std::shared_ptr<UwbData> &message) {
