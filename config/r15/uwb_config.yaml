@@ -2,16 +2,16 @@
 
 init:
   rostopic: /uwb_init/uwb_anchors
-  n_anchors_to_fix: 2
+  n_fixed_anchors: 2
+  n_known_anchors: 4
 
 tag0:
   rostopic: /mus/uwb
-  n_anchors: 0
   calib_uwb_extrinsics: true
-  uwb_chi2_multipler: 1.0
+  uwb_calib_extrinsic: [0.0, 0.0, 0.0]
   uwb_sigma_range: 0.2
   prior_uwb_imu_cov: 0.1
-  uwb_calib_extrinsic: [0.0, 0.0, 0.0]
+  uwb_chi2_multipler: 1.0
 
 anchor0:
   id: 0

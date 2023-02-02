@@ -16,6 +16,9 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
   /// Number of anchors
   int n_anchors = 0;
 
+  /// Number of fixed anchors
+  int n_anchors_to_fix = 0;
+
   /// uwb extrinsics (p_IinU).
   Eigen::Vector3d uwb_extrinsics = Eigen::Vector3d::Zero();
 
@@ -32,7 +35,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
    * @brief This function will load the non-simulation parameters of the system and print.
    * @param parser If not null, this parser will be used to load our parameters
    */
-  inline void print_and_load(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
+  void print_and_load(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
 
     ov_msckf::VioManagerOptions::print_and_load(parser);
 
@@ -40,7 +43,8 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
 
     if (parser != nullptr) {
       /// Parse number of anchors
-      parser->parse_external("config_uwb", "tag0", "n_anchors", n_anchors);
+      parser->parse_external("config_uwb", "init", "n_fixed_anchors", n_anchors_to_fix);
+      parser->parse_external("config_uwb", "init", "n_known_anchors", n_anchors);
 
       /// Calibration parameters
       std::vector<double> uwb_calib_extrinsic = {0, 0, 0};
@@ -75,6 +79,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
     }
 
     PRINT_DEBUG("  - n_anchors: %d\n", n_anchors);
+    PRINT_DEBUG("  - n_anchors_to_fix: %d\n", n_anchors_to_fix);
     PRINT_DEBUG("  - calib_uwb_imu: [%.3f, %.3f, %.3f]\n", uwb_extrinsics(0), uwb_extrinsics(1), uwb_extrinsics(2));
 
     uvio_state_options.print_and_load(parser);
@@ -82,16 +87,13 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
 
     for (size_t i = 0; i < uwb_anchors.size(); i++) {
       PRINT_DEBUG("  - anchor[%d]: fixed = %s\n", uwb_anchors.at(i).id, uwb_anchors.at(i).fix ? "true" : "false");
-      PRINT_DEBUG("  - anchor[%d]: p_AinG = [%.3f, %.3f, %.3f]\n", uwb_anchors.at(i).id,
-                  uwb_anchors.at(i).p_AinG.x(), uwb_anchors.at(i).p_AinG.y(), uwb_anchors.at(i).p_AinG.z());
+      PRINT_DEBUG("  - anchor[%d]: p_AinG = [%.3f, %.3f, %.3f]\n", uwb_anchors.at(i).id, uwb_anchors.at(i).p_AinG.x(),
+                  uwb_anchors.at(i).p_AinG.y(), uwb_anchors.at(i).p_AinG.z());
       PRINT_DEBUG("  - anchor[%d]: const_bias = %.3f\n", uwb_anchors.at(i).id, uwb_anchors.at(i).const_bias);
       PRINT_DEBUG("  - anchor[%d]: dist_bias = %.3f\n", uwb_anchors.at(i).id, uwb_anchors.at(i).dist_bias);
       PRINT_DEBUG("  - anchor[%d]: cov.diagonal() = [%.3f, %.3f, %.3f, %.4f, %.4f]\n\n", uwb_anchors.at(i).id,
-                  uwb_anchors.at(i).cov.diagonal()(0),
-                  uwb_anchors.at(i).cov.diagonal()(1),
-                  uwb_anchors.at(i).cov.diagonal()(2),
-                  uwb_anchors.at(i).cov.diagonal()(3),
-                  uwb_anchors.at(i).cov.diagonal()(4));
+                  uwb_anchors.at(i).cov.diagonal()(0), uwb_anchors.at(i).cov.diagonal()(1), uwb_anchors.at(i).cov.diagonal()(2),
+                  uwb_anchors.at(i).cov.diagonal()(3), uwb_anchors.at(i).cov.diagonal()(4));
     }
   }
 };

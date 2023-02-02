@@ -34,10 +34,10 @@
 #else
 #include <mdek_uwb_driver/Uwb.h>
 #endif
-#include <ros/ROS1Visualizer.h>
-#include <sensor_msgs/Imu.h>
 #include "uvio/UwbAnchor.h"
 #include "uvio/UwbAnchorArrayStamped.h"
+#include <ros/ROS1Visualizer.h>
+#include <sensor_msgs/Imu.h>
 
 #include "core/UVioManager.h"
 
@@ -61,7 +61,6 @@ public:
    */
   void setup_subscribers(std::shared_ptr<ov_core::YamlParser> parser);
 
-
   /// Callback for inertial information
   void callback_inertial(const sensor_msgs::Imu::ConstPtr &msg);
 
@@ -73,15 +72,12 @@ public:
 #endif
 
   /// Callback for anchors initialization information
-  void callback_anchors_init(const uvio::UwbAnchorArrayStampedConstPtr& msg);
+  void callback_anchors_init(const uvio::UwbAnchorArrayStampedConstPtr &msg);
 
 private:
   /// UWB subscriber
   ros::Subscriber _sub_uwb;
   ros::Subscriber _sub_anchors_init;
-
-  /// UWB anchors initialization parameter
-  uint _n_anchors_to_fix;
 
   /// Core application of the filter system
   std::shared_ptr<UVioManager> _app;

@@ -51,14 +51,7 @@ void UVIOROS1Visualizer::setup_subscribers(std::shared_ptr<ov_core::YamlParser> 
   _nh->param<std::string>("topic_anchors_init", topic_anchors_init, "/uwb_init/anchors");
   parser->parse_external("config_uwb", "init", "rostopic", topic_anchors_init);
   _sub_anchors_init = _nh->subscribe(topic_anchors_init, 1, &UVIOROS1Visualizer::callback_anchors_init, this);
-
-  // Parsing parameter for anchors initialization
-  int n_fixed;
-  _nh->param<int>("n_anchors_to_fix", n_fixed, 2);
-  if (n_fixed < 0) {
-    PRINT_DEBUG(RED "n_anchors_to_fix parameter found negative (%d), setting to 0" RESET, n_fixed);
-  }
-  _n_anchors_to_fix = uint(std::max(n_fixed, 0));
+  PRINT_DEBUG("subscribing to anchors_init: %s\n", topic_anchors_init.c_str());
 }
 
 void UVIOROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg) {
@@ -180,29 +173,28 @@ void UVIOROS1Visualizer::callback_anchors_init(const UwbAnchorArrayStampedConstP
     anchor.id = it.id;
     anchor.p_AinG << it.position.x, it.position.y, it.position.z;
     anchor.const_bias = it.gamma;
-    anchor.dist_bias = it.beta - 1;   // beta = 1 + dist_bias
+    anchor.dist_bias = it.beta - 1; // beta = 1 + dist_bias
 
     // Fill the covariance matrix
     int idx = 0;
-    for(int i = 0; i < anchor.cov.rows(); i++) {
-      for(int j = i; j < anchor.cov.cols(); j++) {
-        anchor.cov(i,j) = it.covariance.at(idx++);
-        anchor.cov(j,i) = anchor.cov(i,j);
+    for (int i = 0; i < anchor.cov.rows(); i++) {
+      for (int j = i; j < anchor.cov.cols(); j++) {
+        anchor.cov(i, j) = it.covariance.at(idx++);
+        anchor.cov(j, i) = anchor.cov(i, j);
       }
     }
     anchors.push_back(anchor);
   }
 
   // Sort the vector based on the determinant of the cov matrix
-  std::partial_sort(anchors.begin(), anchors.begin() + _n_anchors_to_fix, anchors.end(),
-                    [](const AnchorData& a, const AnchorData& b) {
-    return a.cov.determinant() < b.cov.determinant();
-  });
+  std::sort(anchors.begin(), anchors.end(),
+            [](const AnchorData &a, const AnchorData &b) { return a.cov.determinant() < b.cov.determinant(); });
 
-  // Set the fix member of the first n elements to true
-  for (size_t i = 0; i < anchors.size(); i++) {
-    if (i >= _n_anchors_to_fix) { break; }
-    anchors.at(i).fix = true;
+  // If we have anchors to fix, then fix them
+  if (_app->get_n_anchors_to_fix() > 0) {
+    for (int i = 0; i < _app->get_n_anchors_to_fix(); i++) {
+      anchors.at(i).fix = true;
+    }
   }
 
   // Try to initialize anchors
