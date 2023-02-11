@@ -26,7 +26,7 @@
 #define EVB_DRIVER 2
 
 #ifndef UWB_DRIVER
-#define UWB_DRIVER EVB_DRIVER
+#define UWB_DRIVER MDEK_DRIVER
 #endif
 
 #if UWB_DRIVER == EVB_DRIVER
