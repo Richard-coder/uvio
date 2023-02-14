@@ -41,14 +41,15 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     Eigen::Matrix3d R = Eigen::Matrix3d::Identity() * params.uvio_state_options.prior_uwb_imu_cov;
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
     ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
+
+    // Our UWB sensor extrinsic transform
+    state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
+    state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
+
     PRINT_INFO("Calibration uwb-imu initialized\n");
     PRINT_INFO("calib_UWBtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
                state->_calib_UWBtoIMU->value()(2));
   }
-
-  // Our UWB sensor extrinsic transform
-  state->_calib_UWBtoIMU->set_value(params.uwb_extrinsics);
-  state->_calib_UWBtoIMU->set_fej(params.uwb_extrinsics);
 
   // Initialize anchors (if provided in config file)
   try_to_initialize_uwb_anchors(params.uwb_anchors);
