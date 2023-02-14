@@ -42,7 +42,7 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
     Eigen::Vector3d res = Eigen::Vector3d::Zero();
     ov_msckf::StateHelper::initialize_invertible(state->_state, state->_calib_UWBtoIMU, H_order, H_R, H_L, R, res);
     PRINT_INFO("Calibration uwb-imu initialized\n");
-    PRINT_INFO("calib_UWtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
+    PRINT_INFO("calib_UWBtoIMU = [%.3f,%.3f,%.3f]\n", state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
                state->_calib_UWBtoIMU->value()(2));
   }
 
@@ -188,7 +188,7 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
 
   // Print our current uwb state
   if (params.uvio_state_options.do_calib_uwb_extrinsics) {
-    PRINT_INFO(YELLOW "calib_UWtoIMU = [%.3f,%.3f,%.3f]\n" RESET, state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
+    PRINT_INFO(YELLOW "calib_UWBtoIMU = [%.3f,%.3f,%.3f]\n" RESET, state->_calib_UWBtoIMU->value()(0), state->_calib_UWBtoIMU->value()(1),
                state->_calib_UWBtoIMU->value()(2));
   }
   for (const auto &it : state->_calib_GLOBALtoANCHORS) {
