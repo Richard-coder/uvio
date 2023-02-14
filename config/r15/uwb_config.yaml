@@ -8,7 +8,7 @@ init:
 tag0:
   rostopic: /mus/uwb
   calib_uwb_extrinsics: true
-  uwb_calib_extrinsic: [0.0, 0.0, 0.0]
+  p_UinI: [0.0, 0.0, 0.0]
   uwb_sigma_range: 0.2
   prior_uwb_imu_cov: 0.1
   uwb_chi2_multipler: 1.0

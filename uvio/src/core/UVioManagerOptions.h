@@ -47,9 +47,9 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
       parser->parse_external("config_uwb", "init", "n_known_anchors", n_anchors);
 
       /// Calibration parameters
-      std::vector<double> uwb_calib_extrinsic = {0, 0, 0};
-      parser->parse_external("config_uwb", "tag0", "uwb_calib_extrinsic", uwb_calib_extrinsic);
-      uwb_extrinsics << uwb_calib_extrinsic.at(0), uwb_calib_extrinsic.at(1), uwb_calib_extrinsic.at(2);
+      std::vector<double> p_UinI = {0, 0, 0};
+      parser->parse_external("config_uwb", "tag0", "p_UinI", p_UinI);
+      uwb_extrinsics << -p_UinI.at(0), -p_UinI.at(1), -p_UinI.at(2);
 
       /// Parse anchors
       for (int i = 0; i < n_anchors; i++) {

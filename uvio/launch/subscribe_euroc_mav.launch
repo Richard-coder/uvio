@@ -2,7 +2,7 @@
 <launch>
 
     <!-- what config we are going to run (should match folder name) -->
-    <arg name="verbosity"   default="INFO" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
+    <arg name="verbosity"   default="DEBUG" /> <!-- ALL, DEBUG, INFO, WARNING, ERROR, SILENT -->
     <arg name="config"      default="uvio_euroc_mav" /> <!-- euroc_mav, tum_vi, rpng_aruco -->
     <arg name="config_path" default="$(find uvio)/../config/$(arg config)/estimator_config.yaml" />
 
