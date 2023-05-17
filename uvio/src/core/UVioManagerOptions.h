@@ -19,6 +19,9 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
   /// Number of fixed anchors
   int n_anchors_to_fix = 0;
 
+  /// Minimum traveled distance to initialize anchors
+  double min_dist_to_use_uwb = 0.0;
+
   /// uwb extrinsics (p_IinU).
   Eigen::Vector3d uwb_extrinsics = Eigen::Vector3d::Zero();
 
@@ -45,6 +48,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
       /// Parse number of anchors
       parser->parse_external("config_uwb", "init", "n_fixed_anchors", n_anchors_to_fix);
       parser->parse_external("config_uwb", "init", "n_known_anchors", n_anchors);
+      parser->parse_external("config_uwb", "init", "min_dist_to_use_uwb", min_dist_to_use_uwb);
 
       /// Calibration parameters
       std::vector<double> p_UinI = {0, 0, 0};
@@ -80,6 +84,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
 
     PRINT_DEBUG("  - n_anchors: %d\n", n_anchors);
     PRINT_DEBUG("  - n_anchors_to_fix: %d\n", n_anchors_to_fix);
+    PRINT_DEBUG("  - min_dist_to_init_anchors: %.3f\n", min_dist_to_use_uwb);
     PRINT_DEBUG("  - calib_uwb_imu: [%.3f, %.3f, %.3f]\n", uwb_extrinsics(0), uwb_extrinsics(1), uwb_extrinsics(2));
 
     uvio_state_options.print_and_load(parser);

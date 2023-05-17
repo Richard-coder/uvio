@@ -61,14 +61,14 @@ UVioManager::UVioManager(UVioManagerOptions &params_) : ov_msckf::VioManager::Vi
 void UVioManager::feed_measurement_uwb(const UwbData &message) {
 
   // Check if vio is initialized, anchors are initialized and distace traveled is
-  // greater than 0.5 meter, else return
-  if (!(is_initialized_vio && are_initialized_anchors && distance > 0.5)) {
+  // greater than threshold, else return
+  if (!(is_initialized_vio && are_initialized_anchors && distance > params.min_dist_to_use_uwb)) {
     return;
   }
 
   // Return if the uwb measurement is out of order otherwise feed our bar measuremnts
   if (state->_state->_timestamp >= message.timestamp) {
-    PRINT_INFO(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET, (message.timestamp - state->_state->_timestamp));
+    PRINT_DEBUG(YELLOW "UWB measurements received out of order (prop dt = %3f)\n" RESET, (message.timestamp - state->_state->_timestamp));
     return;
   }
 
@@ -177,7 +177,7 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
   // Retrive other measurement from last update up to vision measurement time
   if (!past_measurements.empty()) {
     for (auto it = past_measurements.begin(); it != past_measurements.lower_bound(message.timestamp); it++) {
-      if (it->first < message.timestamp) {
+      if (it->first < message.timestamp && it->first > state->_state->_timestamp) {
         do_uwb_propagate_update(it->second);
       }
     }

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.3)
 # Find ROS build system
 find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init ov_msckf nodelet)
 find_package(mdek_uwb_driver REQUIRED)
-find_package(evb1000_driver)
+#find_package(evb1000_driver REQUIRED)
 
 message(STATUS "MDEK: " ${mdek_uwb_driver_VERSION} " | EVB1000: " ${evb1000_driver_VERSION})
 
@@ -66,7 +66,7 @@ list(APPEND LIBRARY_SOURCES
 )
 
 file(GLOB_RECURSE LIBRARY_HEADERS "src/*.h")
-add_library(uvio_lib SHARED ${LIBRARY_SOURCES})
+add_library(uvio_lib SHARED ${LIBRARY_SOURCES} ${LIBRARY_HEADERS})
 add_dependencies(uvio_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(uvio_lib ${thirdparty_libraries})
 target_include_directories(uvio_lib PUBLIC src)
