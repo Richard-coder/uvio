@@ -158,11 +158,10 @@ public:
     }
 
     // Original method
-    // https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process
-    // x_axis = e_1 - z_axis * z_axis.transpose() * e_1;
-    // x_axis = x_axis / x_axis.norm();
-    // y_axis = ov_core::skew_x(z_axis) * x_axis;
-    // y_axis = y_axis / y_axis.norm();
+    x_axis = e_1 - z_axis * z_axis.transpose() * e_1;
+    x_axis = x_axis / x_axis.norm();
+    y_axis = ov_core::skew_x(z_axis) * x_axis;
+    y_axis = y_axis / y_axis.norm();
 
     // Rotation from our global (where gravity is only along the z-axis) to the local one
     R_GtoI.block(0, 0, 3, 1) = x_axis;
