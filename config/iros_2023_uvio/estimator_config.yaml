@@ -115,6 +115,7 @@ relative_config_imu: "kalibr_imu_chain.yaml"
 relative_config_imucam: "kalibr_imucam_chain.yaml"
 
 config_uwb: "uwb_config.yaml"
+uwb_anchors: "uwb_anchors.yaml"
 
 
 

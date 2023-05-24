@@ -1,11 +1,13 @@
 %YAML:1.0
 
+# Initialization options
 init:
   rostopic: /uwb_init/uwb_anchors
   n_fixed_anchors: 2
-  n_known_anchors: 0
+  n_known_anchors: 0 # If >0 then the file uwb_anchors.yaml must be present in the same directory as this file **
   min_dist_to_use_uwb: 0.5
 
+# UWB tag calibration options
 tag0:
   rostopic: /uwb_driver_node/uwb
   calib_uwb_extrinsics: false
@@ -14,42 +16,41 @@ tag0:
   prior_uwb_imu_cov: 0.1
   uwb_chi2_multipler: 1.0
 
-anchor0:
-  id: 19333
-  fix: true
-  p_AinG: [2.97,1.44,2.13]
-  const_bias: 0.0
-  dist_bias: 0.0
-  prior_p_AinG_cov: 0.05
-  prior_const_bias_cov: 0.2
-  prior_dist_bias_cov: 0.02
-
-anchor1:
-  id: 22660
-  fix: false
-  p_AinG: [-2.45,3.75,1.53]
-  const_bias: 0.0
-  dist_bias: 0.0
-  prior_p_AinG_cov: 0.05
-  prior_const_bias_cov: 0.2
-  prior_dist_bias_cov: 0.02
-
-anchor2:
-  id: 19110
-  fix: true
-  p_AinG: [-0.71,-0.93,0.25]
-  const_bias: 0.0
-  dist_bias: 0.0
-  prior_p_AinG_cov: 0.05
-  prior_const_bias_cov: 0.2
-  prior_dist_bias_cov: 0.02
-
-anchor3:
-  id: 7435
-  fix: false
-  p_AinG: [-2.19,-4.16,1.22]
-  const_bias: 0.0
-  dist_bias: 0.0
-  prior_p_AinG_cov: 0.05
-  prior_const_bias_cov: 0.2
-  prior_dist_bias_cov: 0.02
+# ** If n_known_anchors > 0 then the file uwb_anchors.yaml must be present in the same directory as this file
+#   The file uwb_anchors.yaml must contain the following information (e.g. for n_known_anchors = 2):
+#
+# anchor0:
+#   id: 19333
+#   fix: true
+#   p_AinG: [2.97,1.44,2.13]
+#   const_bias: 0.0
+#   dist_bias: 0.0
+#   prior_p_AinG_cov: 0.05
+#   prior_const_bias_cov: 0.2
+#   prior_dist_bias_cov: 0.02
+#
+# anchor1:
+#   id: 22660
+#   fix: true
+#   p_AinG: [-2.45,3.75,1.53]
+#   const_bias: 0.0
+#   dist_bias: 0.0
+#   prior_p_AinG_cov: 0.05
+#   prior_const_bias_cov: 0.2
+#   prior_dist_bias_cov: 0.02
+#
+#
+# Template for anchorN:
+#
+# anchorN:
+#   id: (anchor id)
+#   fix: (true/false)
+#   p_AinG: [x,y,z] (position of anchor in global frame)
+#   const_bias: (const bias close to zero)
+#   dist_bias: (distance bias close to zero)
+#   prior_p_AinG_cov: (prior variance of anchor position)
+#   prior_const_bias_cov: (prior variance of const bias)
+#   prior_dist_bias_cov: (prior variance of distance bias)
+#
+# Note: The anchor ids must be unique and at least two anchors must be fixed (fix: true)
+#

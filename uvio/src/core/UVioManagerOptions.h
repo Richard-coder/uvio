@@ -61,14 +61,14 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
         bool anch_fix;
         double const_b, dist_b, p, c, d;
         std::vector<double> pos = {0, 0, 0};
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "id", anch_id);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "fix", anch_fix);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "p_AinG", pos);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "const_bias", const_b);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "dist_bias", dist_b);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "prior_p_AinG_cov", p);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "prior_const_bias_cov", c);
-        parser->parse_external("config_uwb", "anchor" + std::to_string(i), "prior_dist_bias_cov", d);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "id", anch_id);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "fix", anch_fix);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "p_AinG", pos);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "const_bias", const_b);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "dist_bias", dist_b);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "prior_p_AinG_cov", p);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "prior_const_bias_cov", c);
+        parser->parse_external("uwb_anchors", "anchor" + std::to_string(i), "prior_dist_bias_cov", d);
 
         AnchorData anchor;
         anchor.id = anch_id;
