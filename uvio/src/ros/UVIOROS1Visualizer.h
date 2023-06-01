@@ -64,6 +64,13 @@ public:
   /// Callback for inertial information
   void callback_inertial(const sensor_msgs::Imu::ConstPtr &msg);
 
+  /**
+   * @brief override of ROS1Visualizer::visualize_odometry() to add anchors tf.
+   * This will take the current state estimate and get the propagated pose to the desired time.
+   * This can be used to get pose estimates on systems which require high frequency pose estimates.
+   */
+  void visualize_odometry(double timestamp);
+
   /// Callback for uwb information
 #if UWB_DRIVER == EVB_DRIVER
   void callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb);

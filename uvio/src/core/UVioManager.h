@@ -64,6 +64,14 @@ public:
    */
   int get_n_anchors_to_fix() { return params.n_anchors_to_fix; };
 
+  /**
+   * @brief Get if anchors are initialized
+   */
+  bool get_are_initialized_anchors() { return are_initialized_anchors; };
+
+  /// Accessor to get the current state
+  std::shared_ptr<UVioState> get_uvio_state() { return state; }
+
 private:
   /// Manager parameters
   UVioManagerOptions params;

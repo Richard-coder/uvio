@@ -114,6 +114,27 @@ void UVIOROS1Visualizer::callback_inertial(const sensor_msgs::Imu::ConstPtr &msg
   }
 }
 
+void UVIOROS1Visualizer::visualize_odometry(double timestamp) {
+
+  ROS1Visualizer::visualize_odometry(timestamp);
+
+  // If anchors are initialized, publish transforms on TF
+  if (_app->get_are_initialized_anchors()) {
+
+    for (const auto &anchor : _app->get_uvio_state()->_calib_GLOBALtoANCHORS) {
+      std::string anchor_name = "anchor[" + std::to_string(anchor.first) + "]";
+      tf::Transform transform;
+      transform.setOrigin(
+          tf::Vector3(anchor.second->p_AinG()->value()(0), anchor.second->p_AinG()->value()(1), anchor.second->p_AinG()->value()(2)));
+      transform.setRotation(tf::Quaternion(0, 0, 0, 1));
+      mTfBr->sendTransform(
+          tf::StampedTransform(transform, ros::Time(timestamp), "global", anchor_name)); // TODO make the parent frame a param
+    }
+  }
+
+  // TODO publish uwb tag calibration trnsform on TF
+}
+
 #if UWB_DRIVER == EVB_DRIVER
 void UVIOROS1Visualizer::callback_uwb(const evb1000_driver::TagDistanceConstPtr &msg_uwb) {
 
