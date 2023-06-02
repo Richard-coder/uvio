@@ -12,6 +12,7 @@ tag0:
   rostopic: /uwb_driver_node/uwb
   calib_uwb_extrinsics: false
   p_UinI: [0.01, -0.01, -0.05]
+  p_IinG0: [0.0, 0.0, 0.0]  # Initial position of UAV in global frame (used as offset for known anchors)
   uwb_sigma_range: 0.5
   prior_uwb_imu_cov: 0.1
   uwb_chi2_multipler: 1.0

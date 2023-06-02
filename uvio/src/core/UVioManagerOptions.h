@@ -25,6 +25,9 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
   /// uwb extrinsics (p_IinU).
   Eigen::Vector3d uwb_extrinsics = Eigen::Vector3d::Zero();
 
+  /// offset between initial position of UAV and global frame (p_GinI0).
+  Eigen::Vector3d offset_p0 = Eigen::Vector3d::Zero();
+
   /// uwb anchors references (id, p_AinG, const_bias, dist_bias, Cov).
   std::vector<AnchorData> uwb_anchors;
 
@@ -55,6 +58,11 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
       parser->parse_external("config_uwb", "tag0", "p_UinI", p_UinI);
       uwb_extrinsics << -p_UinI.at(0), -p_UinI.at(1), -p_UinI.at(2);
 
+      /// Initial offset parameter
+      std::vector<double> p_IinG0 = {0, 0, 0};
+      parser->parse_external("config_uwb", "tag0", "p_IinG0", p_IinG0);
+      offset_p0 << -p_IinG0.at(0), -p_IinG0.at(1), -p_IinG0.at(2);
+
       /// Parse anchors
       for (int i = 0; i < n_anchors; i++) {
         int anch_id;
@@ -73,7 +81,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
         AnchorData anchor;
         anchor.id = anch_id;
         anchor.fix = anch_fix;
-        anchor.p_AinG << pos.at(0), pos.at(1), pos.at(2);
+        anchor.p_AinG << pos.at(0) - p_IinG0.at(0), pos.at(1) - p_IinG0.at(1), pos.at(2) - p_IinG0.at(2);
         anchor.const_bias = const_b;
         anchor.dist_bias = dist_b;
         anchor.cov.diagonal() << p, p, p, c, d;
@@ -86,6 +94,7 @@ struct UVioManagerOptions : ov_msckf::VioManagerOptions {
     PRINT_DEBUG("  - n_anchors_to_fix: %d\n", n_anchors_to_fix);
     PRINT_DEBUG("  - min_dist_to_init_anchors: %.3f\n", min_dist_to_use_uwb);
     PRINT_DEBUG("  - calib_uwb_imu: [%.3f, %.3f, %.3f]\n", uwb_extrinsics(0), uwb_extrinsics(1), uwb_extrinsics(2));
+    PRINT_DEBUG("  - p_GinI0: [%.3f, %.3f, %.3f]\n", offset_p0(0), offset_p0(1), offset_p0(2));
 
     uvio_state_options.print_and_load(parser);
     uwb_options.print_and_load(parser);
