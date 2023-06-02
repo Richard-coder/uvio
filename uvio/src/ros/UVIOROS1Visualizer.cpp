@@ -121,18 +121,30 @@ void UVIOROS1Visualizer::visualize_odometry(double timestamp) {
   // If anchors are initialized, publish transforms on TF
   if (_app->get_are_initialized_anchors()) {
 
+    // Loop through all anchors and publish their transforms
     for (const auto &anchor : _app->get_uvio_state()->_calib_GLOBALtoANCHORS) {
       std::string anchor_name = "anchor[" + std::to_string(anchor.first) + "]";
-      tf::Transform transform;
-      transform.setOrigin(
+      tf::StampedTransform trans_anchor;
+      trans_anchor.stamp_ = ros::Time::now();
+      trans_anchor.setOrigin(
           tf::Vector3(anchor.second->p_AinG()->value()(0), anchor.second->p_AinG()->value()(1), anchor.second->p_AinG()->value()(2)));
-      transform.setRotation(tf::Quaternion(0, 0, 0, 1));
-      mTfBr->sendTransform(
-          tf::StampedTransform(transform, ros::Time(timestamp), "global", anchor_name)); // TODO make the parent frame a param
+      trans_anchor.setRotation(tf::Quaternion(0, 0, 0, 1));
+      trans_anchor.frame_id_ = "global"; // TODO: make it a parameter (?)
+      trans_anchor.child_frame_id_ = anchor_name;
+      mTfBr->sendTransform(trans_anchor);
     }
   }
 
-  // TODO publish uwb tag calibration trnsform on TF
+  // Publish uwb-imu calibration transform on TF
+  tf::StampedTransform trans_calib_uwb;
+  trans_calib_uwb.stamp_ = ros::Time::now();
+  trans_calib_uwb.setOrigin(tf::Vector3(_app->get_uvio_state()->_calib_UWBtoIMU->value()(0),
+                                        _app->get_uvio_state()->_calib_UWBtoIMU->value()(1),
+                                        _app->get_uvio_state()->_calib_UWBtoIMU->value()(2)));
+  trans_calib_uwb.setRotation(tf::Quaternion(0, 0, 0, 1));
+  trans_calib_uwb.frame_id_ = "imu";
+  trans_calib_uwb.child_frame_id_ = "uwb";
+  mTfBr->sendTransform(trans_calib_uwb);
 }
 
 #if UWB_DRIVER == EVB_DRIVER

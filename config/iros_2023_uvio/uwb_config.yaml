@@ -10,7 +10,7 @@ init:
 # UWB tag calibration options
 tag0:
   rostopic: /uwb_driver_node/uwb
-  calib_uwb_extrinsics: true
+  calib_uwb_extrinsics: false
   p_UinI: [0.01, -0.01, -0.05]
   uwb_sigma_range: 0.5
   prior_uwb_imu_cov: 0.1
