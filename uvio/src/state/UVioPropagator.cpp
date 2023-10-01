@@ -54,8 +54,8 @@ void UVioPropagator::propagate(std::shared_ptr<ov_msckf::State> state, double ti
   // Q_summed = Phi_i*Q_summed*Phi_i^T + Q_i
   // After summing we can multiple the total phi to get the updated covariance
   // We will then add the noise to the IMU portion of the state
-  Eigen::Matrix<double, 15, 15> Phi_summed = Eigen::Matrix<double, 15, 15>::Identity();
-  Eigen::Matrix<double, 15, 15> Qd_summed = Eigen::Matrix<double, 15, 15>::Zero();
+  Eigen::MatrixXd Phi_summed = Eigen::MatrixXd::Identity(state->imu_intrinsic_size() + 15, state->imu_intrinsic_size() + 15);
+  Eigen::MatrixXd Qd_summed = Eigen::MatrixXd::Zero(state->imu_intrinsic_size() + 15, state->imu_intrinsic_size() + 15);
   double dt_summed = 0;
 
   // Loop through all IMU messages, and use them to move the state forward in time
@@ -64,8 +64,7 @@ void UVioPropagator::propagate(std::shared_ptr<ov_msckf::State> state, double ti
     for (size_t i = 0; i < prop_data.size() - 1; i++) {
 
       // Get the next state Jacobian and noise Jacobian for this IMU reading
-      Eigen::Matrix<double, 15, 15> F = Eigen::Matrix<double, 15, 15>::Zero();
-      Eigen::Matrix<double, 15, 15> Qdi = Eigen::Matrix<double, 15, 15>::Zero();
+      Eigen::MatrixXd F, Qdi;
       predict_and_compute(state, prop_data.at(i), prop_data.at(i + 1), F, Qdi);
 
       // Next we should propagate our IMU covariance
@@ -83,18 +82,34 @@ void UVioPropagator::propagate(std::shared_ptr<ov_msckf::State> state, double ti
   assert(std::abs((time1 - time0) - dt_summed) < 1e-4);
 
   // Last angular velocity (used for cloning when estimating time offset)
-  Eigen::Matrix<double, 3, 1> last_w = Eigen::Matrix<double, 3, 1>::Zero();
-  if (prop_data.size() > 1)
-    last_w = prop_data.at(prop_data.size() - 2).wm - state->_imu->bias_g();
-  else if (!prop_data.empty())
-    last_w = prop_data.at(prop_data.size() - 1).wm - state->_imu->bias_g();
+  // Remember to correct them before we store them
+  Eigen::Vector3d last_a = Eigen::Vector3d::Zero();
+  Eigen::Vector3d last_w = Eigen::Vector3d::Zero();
+  if (!prop_data.empty()) {
+    Eigen::Matrix3d Dw = ov_msckf::State::Dm(state->_options.imu_model, state->_calib_imu_dw->value());
+    Eigen::Matrix3d Da = ov_msckf::State::Dm(state->_options.imu_model, state->_calib_imu_da->value());
+    Eigen::Matrix3d Tg = ov_msckf::State::Tg(state->_calib_imu_tg->value());
+    last_a = state->_calib_imu_ACCtoIMU->Rot() * Da * (prop_data.at(prop_data.size() - 1).am - state->_imu->bias_a());
+    last_w = state->_calib_imu_GYROtoIMU->Rot() * Dw * (prop_data.at(prop_data.size() - 1).wm - state->_imu->bias_g() - Tg * last_a);
+  }
 
   // Do the update to the covariance with our "summed" state transition and IMU noise addition...
   std::vector<std::shared_ptr<ov_type::Type>> Phi_order;
   Phi_order.push_back(state->_imu);
+  if (state->_options.do_calib_imu_intrinsics) {
+    Phi_order.push_back(state->_calib_imu_dw);
+    Phi_order.push_back(state->_calib_imu_da);
+    if (state->_options.do_calib_imu_g_sensitivity) {
+      Phi_order.push_back(state->_calib_imu_tg);
+    }
+    if (state->_options.imu_model == ov_msckf::StateOptions::ImuModel::KALIBR) {
+      Phi_order.push_back(state->_calib_imu_GYROtoIMU);
+    } else {
+      Phi_order.push_back(state->_calib_imu_ACCtoIMU);
+    }
+  }
   ov_msckf::StateHelper::EKFPropagation(state, Phi_order, Phi_order, Phi_summed, Qd_summed);
 
   // Set timestamp data
   state->_timestamp = timestamp;
 }
-

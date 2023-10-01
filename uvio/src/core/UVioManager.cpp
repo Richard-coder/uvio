@@ -137,16 +137,12 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
 
   // Perform our feature tracking!
   trackFEATS->feed_new_camera(message);
-  if (is_initialized_vio) {
-    trackDATABASE->append_new_measurements(trackFEATS->get_feature_database());
-  }
 
   // If the aruco tracker is available, the also pass to it
   // NOTE: binocular tracking for aruco doesn't make sense as we by default have the ids
   // NOTE: thus we just call the stereo tracking if we are doing binocular!
   if (is_initialized_vio && trackARUCO != nullptr) {
     trackARUCO->feed_new_camera(message);
-    trackDATABASE->append_new_measurements(trackARUCO->get_feature_database());
   }
   rT2 = boost::posix_time::microsec_clock::local_time();
 
@@ -159,6 +155,10 @@ void UVioManager::track_image_and_update(const ov_core::CameraData &message_cons
       did_zupt_update = updaterZUPT->try_update(state->_state, message.timestamp);
     }
     if (did_zupt_update) {
+      assert(state->_state->_timestamp == message.timestamp);
+      propagator->clean_old_imu_measurements(message.timestamp + state->_state->_calib_dt_CAMtoIMU->value()(0) - 0.10);
+      updaterZUPT->clean_old_imu_measurements(message.timestamp + state->_state->_calib_dt_CAMtoIMU->value()(0) - 0.10);
+      propagator->invalidate_cache();
       return;
     }
   }

@@ -2,7 +2,7 @@
 
 # Initialization options
 init:
-  rostopic: /uwb_init/uwb_anchors
+  rostopic: /uwb_init_ros/uwb_anchors
   n_fixed_anchors: 2
   n_known_anchors: 0 # If >0 then the file uwb_anchors.yaml must be present in the same directory as this file **
   min_dist_to_use_uwb: 0.5
